@@ -1,0 +1,18 @@
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "third_party/glm"]
+	path = third_party/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "third_party/ImGuiFileDialog"]
+	path = third_party/ImGuiFileDialog
+	url = git@github.com-clx:aiekick/ImGuiFileDialog.git
+[submodule "third_party/imgui"]
+	path = third_party/imgui
+	url = git@github.com-clx:ocornut/imgui.git
+[submodule "third_party/json"]
+	path = third_party/json
+	url = git@github.com-clx:nlohmann/json.git
+[submodule "third_party/glad"]
+	path = third_party/glad
+	url = git@github.com-clx:premake-libs/glad.git

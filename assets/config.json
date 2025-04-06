@@ -1,0 +1,30 @@
+{
+  "resolution": [2560, 1920],
+  "camera": {
+    "type": "perspective",
+    "fx": 3092,
+    "fy":2319,
+    "cx": 1280,
+    "cy": 1280
+  },
+  "objects": [
+    {
+      "file": "../assets/cube.obj",
+      "position": [-2, -2, -2],
+      "scale": [1, 1, 1],
+      "rotation": {
+        "type": "euler_xyz",
+        "data": [30, 30, 30]
+      }
+    },
+    {
+      "file": "../assets/cube2.ply",
+      "position": [0, 0, 0],
+        "scale": [0.5, 0.5, 0.5],
+        "rotation": {
+          "type": "quaternion",
+          "data": [0, 0, 0, 1]
+        }
+    }
+  ]
+}
