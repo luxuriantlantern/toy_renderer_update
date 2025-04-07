@@ -22,6 +22,7 @@ public:
     void setCamera(std::shared_ptr<Camera> camera);
     std::shared_ptr<Camera> getCamera() const { return mCamera; }
     std::shared_ptr<Object> addModel(const std::string& filePath);
+    std::vector<std::shared_ptr<Object>> getModels() const { return mObjects; }
 
 private:
     std::vector<std::shared_ptr<Object>> mObjects;

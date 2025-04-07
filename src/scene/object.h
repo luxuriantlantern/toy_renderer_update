@@ -27,10 +27,9 @@ public:
     ~Object() = default;
 
     glm::mat4 getModelMatrix() const { return model; }
-
+    size_t getShapeCount() const { return shapes.size(); }
     void setModelMatrix(const glm::mat4 &modelMatrix) { model = modelMatrix; }
     void setModelMatrix(const glm::vec3 pos){ model = glm::translate(model, pos); }
-    void calculateNormals();
     void scale(const glm::vec3 &scale) { model = glm::scale(model, scale); }
     void rotate(float angleInDegrees, const glm::vec3& axis) {
         model = glm::rotate(model, glm::radians(angleInDegrees), glm::normalize(axis));

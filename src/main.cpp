@@ -4,6 +4,6 @@
 int main()
 {
     auto scene = std::make_shared<Scene>();
-    scene->addModel("../assets/cube.obj");
+    scene->addModel("../assets/cube2.ply");
     return 0;
 }

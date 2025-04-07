@@ -116,7 +116,116 @@ void Scene::loadOBJModel(const std::string &path, const std::shared_ptr<Object> 
 }
 
 void Scene::loadPLYModel(const std::string &path, const std::shared_ptr<Object> &model) {
-    return;
+    happly::PLYData plyIn(path);
+    std::vector<std::array<double, 3>> vPos = plyIn.getVertexPositions();
+    std::vector<std::vector<size_t>> fInd;
+    if (plyIn.hasElement("face") && plyIn.getElement("face").hasProperty("vertex_indices")) {
+        fInd = plyIn.getFaceIndices<size_t>();
+    }
+
+    std::string name;
+    if (!vPos.empty()) {
+        name = std::filesystem::path(path).stem().string();
+        model->setName(name);
+    } else {
+        std::cerr << "No vertices found in model" << std::endl;
+        throw std::runtime_error("No vertices found in model");
+    }
+
+    Shape _shape;    // One ply file only has one shape
+    _shape.name = name;
+    auto calcVertNormal = [](const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+        glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+        return normal;
+    };
+    if (fInd.empty()) {
+        // Only vertices, no faces, create small triangles to show in renderer
+        for (const auto& vertex : vPos) {
+            glm::vec3 v = {
+                    static_cast<float>(vertex[0]),
+                    static_cast<float>(vertex[1]),
+                    static_cast<float>(vertex[2])
+            };
+
+            float epsilon = 0.0001f;
+            glm::vec3 v0 = v + glm::vec3(epsilon, 0.0f, 0.0f);
+            glm::vec3 v1 = v + glm::vec3(0.0f, epsilon, 0.0f);
+            glm::vec3 v2 = v + glm::vec3(0.0f, 0.0f, epsilon);
+            _shape.vertices.push_back(v0);
+            _shape.vertices.push_back(v1);
+            _shape.vertices.push_back(v2);
+
+            glm::vec3 normal = calcVertNormal(v0, v1, v2);
+            _shape.normals.push_back(normal);
+            _shape.normals.push_back(normal);
+            _shape.normals.push_back(normal);
+        }
+    } else {
+        // Has faces, mesh-like
+        std::unordered_map<size_t, glm::vec3> vertNormals;
+        std::unordered_map<size_t, std::vector<size_t>> vertexIndices;
+
+        for (const auto& face: fInd) {
+            if (face.size() < 3) continue;
+            for (size_t i = 1; i < face.size() - 1; ++i) {
+                size_t idx0 = face[0];
+                size_t idx1 = face[i];
+                size_t idx2 = face[i + 1];
+                glm::vec3 v0 = {
+                        static_cast<float>(vPos[idx0][0]),
+                        static_cast<float>(vPos[idx0][1]),
+                        static_cast<float>(vPos[idx0][2])
+                };
+                glm::vec3 v1 = {
+                        static_cast<float>(vPos[idx1][0]),
+                        static_cast<float>(vPos[idx1][1]),
+                        static_cast<float>(vPos[idx1][2])
+                };
+                glm::vec3 v2 = {
+                        static_cast<float>(vPos[idx2][0]),
+                        static_cast<float>(vPos[idx2][1]),
+                        static_cast<float>(vPos[idx2][2])
+                };
+
+                _shape.vertices.push_back(v0);
+                _shape.vertices.push_back(v1);
+                _shape.vertices.push_back(v2);
+                _shape.normals.emplace_back(0.0f);
+                _shape.normals.emplace_back(0.0f);
+                _shape.normals.emplace_back(0.0f);
+
+                glm::vec3 normal = calcVertNormal(v0, v1, v2);
+                if (vertNormals.find(idx0) == vertNormals.end()) {
+                    vertNormals[idx0] = glm::vec3(0.0f);
+                    vertexIndices[idx0] = {};
+                }
+                vertNormals[idx0] += normal;
+                vertexIndices[idx0].push_back(_shape.vertices.size() - 3);
+
+                if (vertNormals.find(idx1) == vertNormals.end()) {
+                    vertNormals[idx1] = glm::vec3(0.0f);
+                    vertexIndices[idx1] = {};
+                }
+                vertNormals[idx1] += normal;
+                vertexIndices[idx1].push_back(_shape.vertices.size() - 2);
+
+                if (vertNormals.find(idx2) == vertNormals.end()) {
+                    vertNormals[idx2] = glm::vec3(0.0f);
+                    vertexIndices[idx2] = {};
+                }
+                vertNormals[idx2] += normal;
+                vertexIndices[idx2].push_back(_shape.vertices.size() - 1);
+            }
+        }
+
+        for (auto& pair : vertNormals) {
+            pair.second = glm::normalize(pair.second);
+            for (size_t idx : vertexIndices[pair.first]) {
+                _shape.normals[idx] = pair.second;
+            }
+        }
+    }
+    model->addShape(_shape);
 }
 
 std::shared_ptr<Object> Scene::addModel(const std::string &filePath) {
