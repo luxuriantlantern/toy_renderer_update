@@ -11,7 +11,7 @@ add_library(glad STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/glad/include/glad/glad.h
         ${CMAKE_CURRENT_SOURCE_DIR}/glad/include/KHR/khrplatform.h
 )
-target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
 
 add_library(imgui
         imgui/imgui.cpp
@@ -25,6 +25,7 @@ add_library(imgui
 target_include_directories(imgui PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
+        ${CMAKE_CURRENT_SOURCE_DIR}/glfw/include
 )
 
 add_library(ImGuiFileDialog ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiFileDialog/ImGuiFileDialog.cpp)

@@ -19,6 +19,11 @@ void Render_OpenGL::init()
     glEnable(GL_DEPTH_TEST);
 }
 
+void Render_OpenGL::render(const std::shared_ptr<Scene>& scene, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix)
+{
+
+}
+
 Render_OpenGL::~Render_OpenGL() {
     Render_OpenGL::cleanup();
     for (auto& shader : mShaders) {
