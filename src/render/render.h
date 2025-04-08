@@ -23,6 +23,7 @@ public:
     virtual void addModel(const std::shared_ptr<Object>& model) = 0;
     virtual void removeModel(const std::shared_ptr<Object>& model) = 0;
     virtual void cleanup() = 0;
+    virtual void init() = 0;
 
 protected:
     std::unordered_map<SHADER_TYPE, std::shared_ptr<Shader>> mShaders;

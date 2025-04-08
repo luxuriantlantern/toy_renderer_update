@@ -7,41 +7,41 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-void Camera::moveForward(float deltaTime) {
-    mPosition += mFront * mMovementSpeed * deltaTime;
+void Camera::moveForward(float deltaTime, float speed) {
+    mPosition += mFront * speed * deltaTime;
 }
 
-void Camera::moveBackward(float deltaTime) {
-    mPosition -= mFront * mMovementSpeed * deltaTime;
+void Camera::moveBackward(float deltaTime, float speed) {
+    mPosition -= mFront * speed * deltaTime;
 }
 
-void Camera::moveLeft(float deltaTime) {
-    mPosition -= mRight * mMovementSpeed * deltaTime;
+void Camera::moveLeft(float deltaTime, float speed) {
+    mPosition -= mRight * speed * deltaTime;
 }
 
-void Camera::moveRight(float deltaTime) {
-    mPosition += mRight * mMovementSpeed * deltaTime;
+void Camera::moveRight(float deltaTime, float speed) {
+    mPosition += mRight * speed * deltaTime;
 }
 
-void Camera::moveUp(float deltaTime) {
-    mPosition += mUp * mMovementSpeed * deltaTime;
+void Camera::moveUp(float deltaTime, float speed) {
+    mPosition += mUp * speed * deltaTime;
 }
 
-void Camera::moveDown(float deltaTime) {
-    mPosition -= mUp * mMovementSpeed * deltaTime;
+void Camera::moveDown(float deltaTime, float speed) {
+    mPosition -= mUp * speed * deltaTime;
 }
 
-void Camera::processLeftMouseMovement(float xoffset, float yoffset) {
-    xoffset *= mMouseSensitivity * 0.1f;
-    yoffset *= mMouseSensitivity * 0.1f;
+void Camera::processLeftMouseMovement(float xoffset, float yoffset, float sensitivity, float speed) {
+    xoffset *= sensitivity * 0.1f;
+    yoffset *= sensitivity * 0.1f;
 
-    this->moveRight(xoffset);
-    this->moveDown(yoffset);
+    this->moveRight(xoffset, speed);
+    this->moveDown(yoffset, speed);
 }
 
-void Camera::processRightMouseMovement(float xoffset, float yoffset, bool constrainPitch) {
-    xoffset *= mMouseSensitivity;
-    yoffset *= mMouseSensitivity;
+void Camera::processRightMouseMovement(float xoffset, float yoffset, float sensitivity, bool constrainPitch) {
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
     mYaw += xoffset;
     mPitch += yoffset;

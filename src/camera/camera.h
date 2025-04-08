@@ -28,20 +28,18 @@ public:
     virtual void setFromIntrinsics(float fx, float fy, float cx, float cy, float near = 0.1f, float far = 100.0f) = 0;
 
     // Movement controls
-    void moveForward(float deltaTime);
-    void moveBackward(float deltaTime);
-    void moveLeft(float deltaTime);
-    void moveRight(float deltaTime);
-    void moveUp(float deltaTime);
-    void moveDown(float deltaTime);
+    void moveForward(float deltaTime, float speed);
+    void moveBackward(float deltaTime, float speed);
+    void moveLeft(float deltaTime, float speed);
+    void moveRight(float deltaTime, float speed);
+    void moveUp(float deltaTime, float speed);
+    void moveDown(float deltaTime, float speed);
 
     // Mouse rotation control
-    void processRightMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
-    void processLeftMouseMovement(float xoffset, float yoffset);
+    void processRightMouseMovement(float xoffset, float yoffset, float sensitivity, bool constrainPitch = true);
+    void processLeftMouseMovement(float xoffset, float yoffset, float speed, float sensitivity);
 
     // Setters for movement parameters
-    void setMovementSpeed(float speed) { mMovementSpeed = speed; }
-    void setMouseSensitivity(float sensitivity) { mMouseSensitivity = sensitivity; }
     void setPosition(glm::vec3 position) { mPosition = position; }
     void setWindowSize(float width, float height) { mwidth = width; mheight = height; }
 
@@ -56,8 +54,7 @@ protected:
 
     float mYaw = -90.0f;
     float mPitch = 0.0f;
-    float mMovementSpeed = 2.5f;
-    float mMouseSensitivity = 0.1f;
+
 
     int mwidth, mheight;
 

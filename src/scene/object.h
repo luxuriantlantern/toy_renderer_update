@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <string>
+#include <stb_image.h>
+#include <iostream>
 
 struct Shape {
     std::vector<glm::vec3> vertices;
@@ -56,6 +58,10 @@ public:
     }
     void setName(const std::string& objectName) { name = objectName; }
     void addShape(const Shape& shape) { shapes.push_back(shape); }
+    std::vector<glm::vec3> getVertices(size_t shapeIndex) const { return shapes[shapeIndex].vertices; }
+    std::vector<glm::vec3> getNormals(size_t shapeIndex) const { return shapes[shapeIndex].normals; }
+    std::vector<glm::vec2> getTexCoords(size_t shapeIndex) const { return shapes[shapeIndex].texCoords; }
+    std::string getTexturePath(size_t shapeIndex) const { return shapes[shapeIndex].texturePath; }
 
 private:
     std::vector<Shape> shapes;
