@@ -35,14 +35,10 @@ void Render_OpenGL::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
 
     auto models = scene->getModels();
     for (const auto& model : models) {
-        // Skip selected shapes in wireframe mode, avoid overlapping of wireframe and outline
-        if (mCurrentShader.first == SHADER_TYPE::WIREFRAME && model->isSelected()) continue;
         shader->setMat4("model", model->getModelMatrix());
         const OpenGLModelResources& resources = mModelResources.at(model);
         size_t shapeCount = model->getShapeCount();
         for (size_t i = 0; i < shapeCount; ++i) {
-            if (!model->isShapeVisible(i)) continue;
-
             glBindVertexArray(resources.VAOs[i]);
             shader->setBool("hasTexture", resources.textures[i] != 0);
             if (resources.textures[i]) {
@@ -56,34 +52,6 @@ void Render_OpenGL::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
             glBindVertexArray(0);
         }
     }
-
-    // Second pass: outline
-    auto outlineShader = mShaders[SHADER_TYPE::Outline];
-    outlineShader->use();
-    outlineShader->setMat4("view", viewMatrix);
-    outlineShader->setMat4("projection", projectionMatrix);
-    if (mCurrentShader.first == SHADER_TYPE::Wireframe) outlineShader->setFloat("offset", 0.0f);
-    else outlineShader->setFloat("offset", 0.0f);   // TODO: Offset can be set by user.
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glLineWidth(1.6f);
-
-    for (const auto& model : models) {
-        if (!model->isSelected()) continue;
-        outlineShader->setMat4("model", model->getModelMatrix());
-        const OpenGLModelResources& resources = mModelResources.at(model);
-        size_t shapeCount = model->getShapeCount();
-        for (size_t i = 0; i < shapeCount; ++i) {
-            if (!model->isShapeVisible(i)) {
-                continue;
-            }
-            glBindVertexArray(resources.VAOs[i]);
-            glDrawArrays(GL_TRIANGLES, 0, resources.vertexCounts[i]);
-            glBindVertexArray(0);
-        }
-    }
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 Render_OpenGL::~Render_OpenGL() {

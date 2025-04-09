@@ -44,7 +44,13 @@ void Viewer::mainloop()
     mRender = std::make_shared<Render_OpenGL>();
     while (!glfwWindowShouldClose(mWindow)) {
         processInput(mWindow);
-
+        if (mRender) {
+            mRender->render(
+                mScene,
+                mCamera->getViewMatrix(),
+                mCamera->getProjectionMatrix()
+            );
+        }
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
     }

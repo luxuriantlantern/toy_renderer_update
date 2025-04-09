@@ -27,7 +27,7 @@ class Shader {
 public:
     virtual void cleanup() = 0;
     virtual void init() = 0;
-    virtual SHADER_BACKEND_TYPE getBackendType() const { return mBackendType; }
+    SHADER_BACKEND_TYPE getBackendType() const { return mBackendType; }
     virtual void use() = 0;
 
     virtual void setBool(const std::string &name, bool value) const = 0;
@@ -42,8 +42,6 @@ protected:
     std::string mFragmentPath;
     std::string mGeometryPath;
     unsigned int mProgram;
-
-
 };
 
 

@@ -32,10 +32,11 @@ public:
         glUseProgram(mProgram);
     }
     GLuint compileShaderProgram(const std::string &path, GLenum type);
-    void setMat4(const std::string &name, const glm::mat4 &mat) const override{
-        if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
-        glUniformMatrix4fv(glGetUniformLocation(mProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
-    }
+    void setBool(const std::string &name, bool value) const;
+    void setInt(const std::string &name, int value) const;
+    void setFloat(const std::string &name, float value) const;
+    void setVec3(const std::string &name, const glm::vec3 &value) const;
+    void setMat4(const std::string &name, const glm::mat4 &mat) const;
 
 private:
 
