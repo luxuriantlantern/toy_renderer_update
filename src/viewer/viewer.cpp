@@ -40,8 +40,6 @@ void Viewer::initWindow(const std::string& title) {
 
 void Viewer::mainloop()
 {
-    initWindow("toy_renderer");
-    mRender = std::make_shared<Render_OpenGL>();
     while (!glfwWindowShouldClose(mWindow)) {
         processInput(mWindow);
         if (mRender) {

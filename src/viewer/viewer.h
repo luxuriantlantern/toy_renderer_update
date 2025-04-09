@@ -16,21 +16,20 @@
 class Viewer {
 public:
     Viewer() = default;
-    Viewer(int width, int height, std::shared_ptr<Camera> camera, std::shared_ptr<Scene> scene) {
+    Viewer(int width, int height, std::shared_ptr<Render>render, std::shared_ptr<Camera> camera, std::shared_ptr<Scene> scene, const std::string& title) {
         mWindow = nullptr;
         mCamera = std::move(camera);
         mScene = std::move(scene);
         mwidth = width;
         mheight = height;
+        mRender = std::move(render);
+        initWindow(title);
     };
     ~Viewer();
 
     void initWindow(const std::string& title);
     void mainloop();
     void processInput(GLFWwindow* window);
-//    std::vector<std::shared_ptr<Object>>
-//        loadJSON(const char* path, int &width, int &height, CameraType &cameratype, int &fx, int &fy, int &cx, int &cy);
-
     std::shared_ptr<Scene> getScene() { return mScene; }
 
 private:

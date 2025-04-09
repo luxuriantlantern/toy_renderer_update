@@ -12,10 +12,11 @@
 void Render_OpenGL::init()
 {
     mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderOpenGL>(
-        "../assets/shaders/glsl/material.vert",
-        "../assets/shaders/glsl/material.frag"
+        "../assets/shaders/material.vert",
+        "../assets/shaders/material.frag"
         );
     mShaders[SHADER_TYPE::MATERIAL]->init();
+    mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
     glEnable(GL_DEPTH_TEST);
 }
 
