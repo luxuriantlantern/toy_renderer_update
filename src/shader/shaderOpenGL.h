@@ -27,18 +27,17 @@ public:
         mProgram = 0;
     }
     void init() override;
-    void use(){
+    void use() override{
         if(mBackendType != OPENGL) return;
         glUseProgram(mProgram);
     }
     GLuint compileShaderProgram(const std::string &path, GLenum type);
-    void setMat4(const std::string &name, const glm::mat4 &mat) override{
+    void setMat4(const std::string &name, const glm::mat4 &mat) const override{
         if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
         glUniformMatrix4fv(glGetUniformLocation(mProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
     }
 
 private:
-    unsigned int mProgram;
 
 };
 

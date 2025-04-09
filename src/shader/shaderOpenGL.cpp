@@ -65,3 +65,28 @@ GLuint shaderOpenGL::compileShaderProgram(const std::string &path, GLenum type) 
 
     return shader;
 }
+
+void Shader::setBool(const std::string &name, bool value) const {
+    if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
+    glUniform1i(glGetUniformLocation(mProgram, name.c_str()), static_cast<int>(value));
+}
+
+void Shader::setInt(const std::string &name, int value) const {
+    if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
+    glUniform1i(glGetUniformLocation(mProgram, name.c_str()), value);
+}
+
+void Shader::setFloat(const std::string &name, float value) const {
+    if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
+    glUniform1f(glGetUniformLocation(mProgram, name.c_str()), value);
+}
+
+void Shader::setVec3(const std::string &name, const glm::vec3 &value) const {
+    if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
+    glUniform3fv(glGetUniformLocation(mProgram, name.c_str()), 1, glm::value_ptr(value));
+}
+
+void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const {
+    if (mBackendType != SHADER_BACKEND_TYPE::OPENGL) return;
+    glUniformMatrix4fv(glGetUniformLocation(mProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+}

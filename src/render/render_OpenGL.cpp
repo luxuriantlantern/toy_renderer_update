@@ -21,7 +21,69 @@ void Render_OpenGL::init()
 
 void Render_OpenGL::render(const std::shared_ptr<Scene>& scene, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix)
 {
+    glClearColor(0.00f, 0.00f, 0.00f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPolygonMode(GL_FRONT_AND_BACK, mCurrentShader.first == SHADER_TYPE::WIREFRAME ? GL_LINE : GL_FILL);
+    glLineWidth(1.0f);
 
+    // First pass: shapes
+    auto shader = mCurrentShader.second;
+    shader->use();
+
+    shader->setMat4("view", viewMatrix);
+    shader->setMat4("projection", projectionMatrix);
+
+    auto models = scene->getModels();
+    for (const auto& model : models) {
+        // Skip selected shapes in wireframe mode, avoid overlapping of wireframe and outline
+        if (mCurrentShader.first == SHADER_TYPE::WIREFRAME && model->isSelected()) continue;
+        shader->setMat4("model", model->getModelMatrix());
+        const OpenGLModelResources& resources = mModelResources.at(model);
+        size_t shapeCount = model->getShapeCount();
+        for (size_t i = 0; i < shapeCount; ++i) {
+            if (!model->isShapeVisible(i)) continue;
+
+            glBindVertexArray(resources.VAOs[i]);
+            shader->setBool("hasTexture", resources.textures[i] != 0);
+            if (resources.textures[i]) {
+                // Use GL_TETURE0 all the time
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, resources.textures[i]);
+                shader->setInt("textureDiffuse", 0);
+            }
+
+            glDrawArrays(GL_TRIANGLES, 0, resources.vertexCounts[i]);
+            glBindVertexArray(0);
+        }
+    }
+
+    // Second pass: outline
+    auto outlineShader = mShaders[SHADER_TYPE::Outline];
+    outlineShader->use();
+    outlineShader->setMat4("view", viewMatrix);
+    outlineShader->setMat4("projection", projectionMatrix);
+    if (mCurrentShader.first == SHADER_TYPE::Wireframe) outlineShader->setFloat("offset", 0.0f);
+    else outlineShader->setFloat("offset", 0.0f);   // TODO: Offset can be set by user.
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(1.6f);
+
+    for (const auto& model : models) {
+        if (!model->isSelected()) continue;
+        outlineShader->setMat4("model", model->getModelMatrix());
+        const OpenGLModelResources& resources = mModelResources.at(model);
+        size_t shapeCount = model->getShapeCount();
+        for (size_t i = 0; i < shapeCount; ++i) {
+            if (!model->isShapeVisible(i)) {
+                continue;
+            }
+            glBindVertexArray(resources.VAOs[i]);
+            glDrawArrays(GL_TRIANGLES, 0, resources.vertexCounts[i]);
+            glBindVertexArray(0);
+        }
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 Render_OpenGL::~Render_OpenGL() {
