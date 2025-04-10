@@ -18,7 +18,7 @@ struct Shape {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texCoords;
-    std::string texturePath;
+    std::string texturePath;// std::filesystem::path
     std::string name;
     bool visible = true;
 };

@@ -1,0 +1,412 @@
+Wavefront OBJ material file
+# Contains 31 materials
+
+newmtl Light_Wool
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Cyan_Wool
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Blue_Wool
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Stone_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Bricks
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Shroomlight
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+Ke 1 1 1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+map_Ke East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Redstone_Lamp_(inactive)
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Double_Acacia_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Acacia_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Block_of_Quartz
+Ns 204
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.16 0.16 0.16
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Red_Terracotta
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Red_Stained_Glass_Pane
+Ns 242.25
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.03 0.03 0.03
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+map_d East_Gate_Voxel-Alpha.png
+illum 4
+# d 0.5
+# Tr 0.5
+Tf 0.5 0.5 0.5
+
+newmtl Acacia_Stairs
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Dark_Prismarine
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Sea_Lantern
+Ns 178.5
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.14 0.14 0.14
+Ke 1 1 1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+map_Ke East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Smooth_Quartz_Slab
+Ns 127.5
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine_Brick_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Dark_Prismarine_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine_Brick_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Dark_Prismarine_Slab
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Orange_Shulker_Box
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Prismarine_Brick_Stairs
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Dark_Prismarine_Stairs
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Acacia_Trapdoor
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+map_d East_Gate_Voxel-Alpha.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Stripped_Acacia_Wood
+Ns 127.5
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Smooth_Stone
+Ns 127.5
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Smooth_Quartz_Stairs
+Ns 127.5
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0
+
+newmtl Warped_Stairs
+Ns 0
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+map_Ka East_Gate_Voxel-RGB.png
+# for G3D, to make textures look blocky:
+interpolateMode NEAREST_MAGNIFICATION_TRILINEAR_MIPMAP_MINIFICATION
+map_Kd East_Gate_Voxel-RGB.png
+illum 2
+# d 1
+# Tr 0

@@ -21,17 +21,16 @@ public:
     void addObject(std::shared_ptr<Object> object);
     void setCamera(std::shared_ptr<Camera> camera);
     std::shared_ptr<Camera> getCamera() const { return mCamera; }
-    std::shared_ptr<Object> addModel(const std::string& filePath);
+    std::shared_ptr<Object> addModel(const std::filesystem::path& filePath);
     std::vector<std::shared_ptr<Object>> getModels() const { return mObjects; }
 
 private:
     std::vector<std::shared_ptr<Object>> mObjects;
     std::shared_ptr<Camera> mCamera;
 
-    static const std::unordered_map<std::string, std::function<void(const std::string&, std::shared_ptr<Object>)>> loadModelFunctions;
-
-    static void loadOBJModel(const std::string& path, const std::shared_ptr<Object>& model);
-    static void loadPLYModel(const std::string& path, const std::shared_ptr<Object>& model);
+    static const std::unordered_map<std::string, std::function<void(const std::filesystem::path&, std::shared_ptr<Object>)>> loadModelFunctions;
+    static void loadOBJModel(const std::filesystem::path& path, const std::shared_ptr<Object>& model);
+    static void loadPLYModel(const std::filesystem::path& path, const std::shared_ptr<Object>& model);
 };
 
 #endif //TOY_RENDERER_SCENE_H

@@ -42,6 +42,8 @@ void Viewer::mainloop()
 {
     while (!glfwWindowShouldClose(mWindow)) {
         processInput(mWindow);
+        glfwGetWindowSize(mWindow, &mwidth, &mheight);
+        mCamera->update(mwidth, mheight);
         if (mRender) {
             mRender->render(
                 mScene,

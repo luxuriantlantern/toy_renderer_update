@@ -18,12 +18,11 @@ public:
                       glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f)):
                       Camera(position),
                       mfov(fov),
-                      maspectRatio(aspectRatio),
                       mnear(near),
-                      mfar(far) {}
+                      mfar(far) {mAspectRatio = aspectRatio;}
 
     void setFromIntrinsics(float fx, float fy, float cx, float cy, float near = 0.1f, float far = 100.0f) {
-        maspectRatio = static_cast<float>(mwidth) / static_cast<float>(mheight);
+        mAspectRatio = static_cast<float>(mwidth) / static_cast<float>(mheight);
         mnear = near;
         mfar = far;
 
@@ -42,26 +41,25 @@ public:
 
     void update(int w, int h) override {
         mwidth = w, mheight = h;
-        maspectRatio = static_cast<float>(mwidth) / static_cast<float>(mheight);
+        mAspectRatio = static_cast<float>(mwidth) / static_cast<float>(mheight);
         mViewMatrix = glm::lookAt(mPosition, mPosition + mFront, mUp);
-        mProjectionMatrix = glm::perspective(mfov, maspectRatio, mnear, mfar);
+        mProjectionMatrix = glm::perspective(mfov, mAspectRatio, mnear, mfar);
     }
 
     CameraType getType() override {return PERSPECTIVE;}
 
     void setFov(float fov) {mfov = fov;}
-    void setAspectRatio(float aspectRatio) {maspectRatio = aspectRatio;}
+    void setAspectRatio(float aspectRatio) {mAspectRatio = aspectRatio;}
     void setNear(float near) {mnear = near;}
     void setFar(float far) {mfar = far;}
 
     float getFov() const {return mfov;}
-    float getAspectRatio() const {return maspectRatio;}
+    float getAspectRatio() const {return mAspectRatio;}
     float getNear() const {return mnear;}
     float getFar() const {return mfar;}
 
 private:
     float mfov;
-    float maspectRatio;
     float mnear;
     float mfar;
 };

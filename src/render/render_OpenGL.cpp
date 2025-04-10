@@ -12,8 +12,8 @@
 void Render_OpenGL::init()
 {
     mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderOpenGL>(
-        "../assets/shaders/material.vert",
-        "../assets/shaders/material.frag"
+        "./assets/shaders/material.vert",
+        "./assets/shaders/material.frag"
         );
     mShaders[SHADER_TYPE::MATERIAL]->init();
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
@@ -104,23 +104,23 @@ void Render_OpenGL::addModel(const std::shared_ptr<Object> &model) {
         const std::string& texturePath = model->getTexturePath(i);
 
         std::vector<float> buffer;
-        for(size_t i = 0; i < vertices.size(); ++i)
+        for(size_t j = 0; j < vertices.size(); ++j)
         {
-            buffer.push_back(vertices[i].x);
-            buffer.push_back(vertices[i].y);
-            buffer.push_back(vertices[i].z);
+            buffer.push_back(vertices[j].x);
+            buffer.push_back(vertices[j].y);
+            buffer.push_back(vertices[j].z);
 
             if(!normals.empty())
             {
-                buffer.push_back(normals[i].x);
-                buffer.push_back(normals[i].y);
-                buffer.push_back(normals[i].z);
+                buffer.push_back(normals[j].x);
+                buffer.push_back(normals[j].y);
+                buffer.push_back(normals[j].z);
             }
 
             if(!texCoords.empty())
             {
-                buffer.push_back(texCoords[i].x);
-                buffer.push_back(texCoords[i].y);
+                buffer.push_back(texCoords[j].x);
+                buffer.push_back(texCoords[j].y);
             }
         }
 

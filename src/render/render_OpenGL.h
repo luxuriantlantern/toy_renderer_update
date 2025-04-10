@@ -8,12 +8,6 @@
 #include "render.h"
 #include "../shader/shaderOpenGL.h"
 
-struct OpenGLModelResources {
-    std::vector<GLuint> VAOs;
-    std::vector<GLuint> VBOs;
-    std::vector<GLuint> textures;
-    std::vector<size_t> vertexCounts;
-};
 
 class Render_OpenGL : public Render {
 public:
@@ -29,6 +23,12 @@ public:
     ) override;
 
 private:
+    struct OpenGLModelResources {
+        std::vector<GLuint> VAOs;
+        std::vector<GLuint> VBOs;
+        std::vector<GLuint> textures;
+        std::vector<size_t> vertexCounts;
+    };
     void cleanup() override;
     std::unordered_map<std::shared_ptr<Object>, OpenGLModelResources> mModelResources;
     void loadTexture(const std::string& path, GLuint& textureID);

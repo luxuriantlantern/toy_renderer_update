@@ -30,6 +30,7 @@ public:
     void initWindow(const std::string& title);
     void mainloop();
     void processInput(GLFWwindow* window);
+
     std::shared_ptr<Scene> getScene() { return mScene; }
 
 private:

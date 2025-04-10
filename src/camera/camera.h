@@ -57,6 +57,7 @@ protected:
 
 
     int mwidth, mheight;
+    float mAspectRatio;
 
     void updateCameraVectors();
 };

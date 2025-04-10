@@ -6,6 +6,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "happly.h"
+namespace fs = std::filesystem;
 
 Scene::Scene() {
     mCamera = nullptr;
@@ -19,12 +20,12 @@ void Scene::setCamera(std::shared_ptr<Camera> camera) {
     mCamera = camera;
 }
 
-const std::unordered_map<std::string, std::function<void(const std::string&, std::shared_ptr<Object>)>> Scene::loadModelFunctions = {
+const std::unordered_map<std::string, std::function<void(const std::filesystem::path&, std::shared_ptr<Object>)>> Scene::loadModelFunctions = {
         {".obj", loadOBJModel},
         {".ply", loadPLYModel}
 };
 
-void Scene::loadOBJModel(const std::string &path, const std::shared_ptr<Object> &model) {
+void Scene::loadOBJModel(const fs::path &path, const std::shared_ptr<Object> &model) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -77,9 +78,6 @@ void Scene::loadOBJModel(const std::string &path, const std::shared_ptr<Object> 
         {
             _shape.normals.resize(_shape.vertices.size(), glm::vec3(0.0f));
             for (size_t i = 0; i < shape.mesh.indices.size(); i += 3) {
-                tinyobj::index_t idx0 = shape.mesh.indices[i];
-                tinyobj::index_t idx1 = shape.mesh.indices[i + 1];
-                tinyobj::index_t idx2 = shape.mesh.indices[i + 2];
 
                 size_t v0_idx = i;
                 size_t v1_idx = i + 1;
@@ -115,8 +113,9 @@ void Scene::loadOBJModel(const std::string &path, const std::shared_ptr<Object> 
     }
 }
 
-void Scene::loadPLYModel(const std::string &path, const std::shared_ptr<Object> &model) {
-    happly::PLYData plyIn(path);
+void Scene::loadPLYModel(const std::filesystem::path&path, const std::shared_ptr<Object> &model) {
+    std::string Path = path.string();
+    happly::PLYData plyIn(Path);
     std::vector<std::array<double, 3>> vPos = plyIn.getVertexPositions();
     std::vector<std::vector<size_t>> fInd;
     if (plyIn.hasElement("face") && plyIn.getElement("face").hasProperty("vertex_indices")) {
@@ -228,8 +227,8 @@ void Scene::loadPLYModel(const std::string &path, const std::shared_ptr<Object> 
     model->addShape(_shape);
 }
 
-std::shared_ptr<Object> Scene::addModel(const std::string &filePath) {
-    std::string extension = filePath.substr(filePath.find_last_of('.'));
+std::shared_ptr<Object> Scene::addModel(const std::filesystem::path &filePath) {
+    std::string extension = filePath.extension();
     auto it = loadModelFunctions.find(extension);
     if (it != loadModelFunctions.end()) {
         auto model = std::make_shared<Object>();
