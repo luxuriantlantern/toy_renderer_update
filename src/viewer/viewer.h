@@ -38,7 +38,9 @@ public:
     void initBackend();
     void mainloop();
     void processInput(GLFWwindow* window);
-    void setUI(std::shared_ptr<UI> ui) { mUI = std::move(ui); }
+    void addUI(const std::shared_ptr<UI>& ui) {
+        mUI.push_back(ui);
+    }
 
     std::shared_ptr<Scene> getScene() { return mScene; }
     std::shared_ptr<Render> getRender() {return mRender;}
@@ -59,7 +61,7 @@ private:
     float mMouseSensitivity = 0.1f;
     int mwidth, mheight;
     std::shared_ptr<Render> mRender;
-    std::shared_ptr<UI> mUI = nullptr;
+    std::vector<std::shared_ptr<UI>> mUI;
     SHADER_BACKEND_TYPE mShaderBackendType = SHADER_BACKEND_TYPE::OPENGL;
 };
 

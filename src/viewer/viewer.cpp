@@ -83,8 +83,10 @@ void Viewer::mainloop()
                 );
             }
         }
-        mUI->render();
-
+        for(const auto& ui : mUI)
+        {
+            ui->render();
+        }
 
 //        End loop
         if(mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)

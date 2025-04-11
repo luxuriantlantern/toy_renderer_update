@@ -43,12 +43,26 @@ public:
             }
             ImGuiFileDialog::Instance()->Close();
         }
-        ImGui::TextColored(ImVec4(1,1,1,1), "Model List");
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(1, 0.5f, 0.2f, 1), "Model List");
+        ImGui::Separator();
         ImGui::BeginChild("Scrolling");
         auto models = mViewer->getScene()->getModels();
         for (const auto& model : models)
         {
+            ImGui::BeginGroup();
             ImGui::TextWrapped("%s", model->getName().c_str());
+            ImGui::SameLine();
+            ImGui::PushID(model.get());
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 0.7f));  // Reddish button
+            if (ImGui::Button("X", ImVec2(20, 20)))
+            {
+                mViewer->getRender()->removeModel(model);
+                mViewer->getScene()->removeModel(model);
+            }
+            ImGui::PopStyleColor();
+            ImGui::PopID();
+            ImGui::EndGroup();
         }
         ImGui::EndChild();
 

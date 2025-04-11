@@ -240,3 +240,10 @@ std::shared_ptr<Object> Scene::addModel(const std::filesystem::path &filePath) {
         return nullptr;
     }
 }
+
+void Scene::removeModel(const std::shared_ptr<Object>& model) {
+    auto it = std::find(mObjects.begin(), mObjects.end(), model);
+    if (it != mObjects.end()) {
+        mObjects.erase(it);
+    }
+}
