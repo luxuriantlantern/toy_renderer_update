@@ -21,6 +21,7 @@ public:
         const std::shared_ptr<Scene>& scene,
         const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix
     ) override;
+    SHADER_BACKEND_TYPE getType() override { return SHADER_BACKEND_TYPE::OPENGL; }
 
 private:
     struct OpenGLModelResources {

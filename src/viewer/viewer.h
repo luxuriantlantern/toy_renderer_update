@@ -10,8 +10,11 @@
 #include "scene/scene.h"
 #include "GLFW/glfw3.h"
 #include "render/render.h"
+#include "viewer/ui/ui.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include <memory>
-
 
 class Viewer {
 public:
@@ -23,11 +26,14 @@ public:
         mwidth = width;
         mheight = height;
         mRender = std::move(render);
+        mUI = std::make_shared<UI>();
         initWindow(title);
+        initBackend();
     };
     ~Viewer();
 
     void initWindow(const std::string& title);
+    void initBackend();
     void mainloop();
     void processInput(GLFWwindow* window);
 
@@ -46,6 +52,8 @@ private:
     float mMouseSensitivity = 0.1f;
     int mwidth, mheight;
     std::shared_ptr<Render> mRender;
+    std::shared_ptr<UI> mUI;
+    SHADER_BACKEND_TYPE mShaderBackendType = SHADER_BACKEND_TYPE::OPENGL;
 };
 
 

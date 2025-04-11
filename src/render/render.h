@@ -18,6 +18,7 @@ public:
             const std::shared_ptr<Scene>& scene,
             const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix
     ) = 0;
+    virtual SHADER_BACKEND_TYPE getType() = 0;
 
     virtual void setup(const std::shared_ptr<Scene>& scene) = 0;
     virtual void addModel(const std::shared_ptr<Object>& model) = 0;

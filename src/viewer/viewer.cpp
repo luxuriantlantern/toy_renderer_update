@@ -5,7 +5,6 @@
 #include <iostream>
 #include <fstream>
 #include "viewer.h"
-#include "render/render_OpenGL.h"
 
 void Viewer::initWindow(const std::string& title) {
     if (!glfwInit()) {
@@ -38,21 +37,70 @@ void Viewer::initWindow(const std::string& title) {
     glEnable(GL_DEPTH_TEST);
 }
 
+void Viewer::initBackend() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+        ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+        ImGui_ImplOpenGL3_Init("#version 450");
+    } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+//        TODO
+    }
+}
+
 void Viewer::mainloop()
 {
     while (!glfwWindowShouldClose(mWindow)) {
         processInput(mWindow);
+        glfwPollEvents();
+
         glfwGetWindowSize(mWindow, &mwidth, &mheight);
+
+        if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+            ImGui_ImplOpenGL3_NewFrame();
+        } else if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+//          TODO
+        }
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Text("Hello, world %d", 123);
+        if (ImGui::Button("Save"))
+        {
+
+        }
         mCamera->update(mwidth, mheight);
         if (mRender) {
-            mRender->render(
-                mScene,
-                mCamera->getViewMatrix(),
-                mCamera->getProjectionMatrix()
-            );
+            if(mRender->getType() != mShaderBackendType)
+            {
+//                TODO: switch to Vulkan
+            }
+            else{
+                mRender->render(
+                        mScene,
+                        mCamera->getViewMatrix(),
+                        mCamera->getProjectionMatrix()
+                );
+            }
         }
+
+
+
+//        End loop
+        if(mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+        {
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+        else
+        {
+//            TODO: finish Imgui for Vulkan
+        }
+
         glfwSwapBuffers(mWindow);
-        glfwPollEvents();
     }
 }
 
