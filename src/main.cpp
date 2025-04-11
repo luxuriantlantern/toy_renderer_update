@@ -3,6 +3,8 @@
 #include "camera/perspective.h"
 #include <memory>
 #include "render/render_OpenGL.h"
+#include "viewer/ui/modelUI.h"
+#include "viewer/ui/ui.h"
 
 int main()
 {
@@ -15,6 +17,8 @@ int main()
     camera->update(WIDTH, HEIGHT);
     auto render = std::make_shared<Render_OpenGL>();
     auto viewer = std::make_shared<Viewer>(WIDTH, HEIGHT, render, camera, scene, title);
+    auto ui = std::make_shared<ModelUI>(viewer);
+    viewer->setUI(ui);
     render->init();
     render->setup(scene);
     viewer->mainloop();

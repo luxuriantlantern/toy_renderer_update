@@ -67,11 +67,8 @@ void Viewer::mainloop()
         }
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::Text("Hello, world %d", 123);
-        if (ImGui::Button("Save"))
-        {
 
-        }
+
         mCamera->update(mwidth, mheight);
         if (mRender) {
             if(mRender->getType() != mShaderBackendType)
@@ -86,7 +83,7 @@ void Viewer::mainloop()
                 );
             }
         }
-
+        mUI->render();
 
 
 //        End loop
@@ -171,29 +168,29 @@ void Viewer::processInput(GLFWwindow *window) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-    if (leftMouseState == GLFW_PRESS) {
-        if (!leftMousePressed) {
-            leftMousePressed = true;
-            firstMouse = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-
-        if (firstMouse) {
-            lastX = xpos;
-            lastY = ypos;
-            firstMouse = false;
-        }
-
-        float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos;
-
-        lastX = xpos;
-        lastY = ypos;
-
-        mCamera->processLeftMouseMovement(xoffset, yoffset, mMouseSensitivity, mMovementSpeed);
-    }
-    else if (leftMousePressed) {
-        leftMousePressed = false;
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
+    // if (leftMouseState == GLFW_PRESS) {
+    //     if (!leftMousePressed) {
+    //         leftMousePressed = true;
+    //         firstMouse = true;
+    //         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //     }
+    //
+    //     if (firstMouse) {
+    //         lastX = xpos;
+    //         lastY = ypos;
+    //         firstMouse = false;
+    //     }
+    //
+    //     float xoffset = xpos - lastX;
+    //     float yoffset = lastY - ypos;
+    //
+    //     lastX = xpos;
+    //     lastY = ypos;
+    //
+    //     mCamera->processLeftMouseMovement(xoffset, yoffset, mMouseSensitivity, mMovementSpeed);
+    // }
+    // else if (leftMousePressed) {
+    //     leftMousePressed = false;
+    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // }
 }

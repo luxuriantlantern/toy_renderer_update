@@ -56,6 +56,7 @@ public:
         glm::quat quaternion = glm::angleAxis(glm::radians(angleInDegrees), glm::normalize(axis));
         rotateQuaternion(quaternion);
     }
+    std::string getName() {return name;}
     void setName(const std::string& objectName) { name = objectName; }
     void addShape(const Shape& shape) { shapes.push_back(shape); }
     std::vector<glm::vec3> getVertices(size_t shapeIndex) const { return shapes[shapeIndex].vertices; }

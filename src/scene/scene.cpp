@@ -33,7 +33,7 @@ void Scene::loadOBJModel(const fs::path &path, const std::shared_ptr<Object> &mo
 
     std::filesystem::path base_dir = std::filesystem::path(path).parent_path(); // For MTL
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str(), base_dir.string().c_str())) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str(), base_dir.string().c_str())) {
         std::cerr << "Failed to load model: " << warn << err << std::endl;
         throw std::runtime_error("Failed to load model");
     }
@@ -228,7 +228,7 @@ void Scene::loadPLYModel(const std::filesystem::path&path, const std::shared_ptr
 }
 
 std::shared_ptr<Object> Scene::addModel(const std::filesystem::path &filePath) {
-    std::string extension = filePath.extension();
+    std::string extension = filePath.extension().string();
     auto it = loadModelFunctions.find(extension);
     if (it != loadModelFunctions.end()) {
         auto model = std::make_shared<Object>();
