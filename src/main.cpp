@@ -6,6 +6,7 @@
 #include "viewer/ui/modelUI.h"
 #include "viewer/ui/ui.h"
 #include "viewer/ui/shaderUI.h"
+#include "viewer/ui/cameraUI.h"
 
 int main()
 {
@@ -20,8 +21,10 @@ int main()
     auto viewer = std::make_shared<Viewer>(WIDTH, HEIGHT, render, camera, scene, title);
     const auto ui_model = std::make_shared<ModelUI>(viewer);
     const auto ui_shader = std::make_shared<ShaderUI>(viewer);
+    const auto ui_camera = std::make_shared<CameraUI>(viewer);
     viewer->addUI(ui_model);
     viewer->addUI(ui_shader);
+    viewer->addUI(ui_camera);
     render->init();
     render->setup(scene);
     viewer->mainloop();

@@ -41,11 +41,16 @@ public:
     void addUI(const std::shared_ptr<UI>& ui) {
         mUI.push_back(ui);
     }
-
+    void setCamera(const std::shared_ptr<Camera>& camera) { mCamera = camera; mCamera->update(mwidth, mheight); }
+    std::shared_ptr<Camera> getCamera() { return mCamera; }
     std::shared_ptr<Scene> getScene() { return mScene; }
     std::shared_ptr<Render> getRender() {return mRender;}
     int getWidth() const { return mwidth; }
     int getHeight() const { return mheight; }
+    float getMovementSpeed() const { return mMovementSpeed; }
+    float getMouseSensitivity() const { return mMouseSensitivity; }
+    void setMovementSpeed(float speed) { mMovementSpeed = speed; }
+    void setMouseSensitivity(float sensitivity) { mMouseSensitivity = sensitivity; }
 
 
 private:
@@ -57,7 +62,7 @@ private:
     float lastX = 0.0f, lastY = 0.0f;
     bool rightMousePressed = false;
     bool leftMousePressed = false;
-    float mMovementSpeed = 2.5f;
+    float mMovementSpeed = 5.0f;
     float mMouseSensitivity = 0.1f;
     int mwidth, mheight;
     std::shared_ptr<Render> mRender;

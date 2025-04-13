@@ -46,6 +46,9 @@ void Camera::processRightMouseMovement(float xoffset, float yoffset, float sensi
     mYaw += xoffset;
     mPitch += yoffset;
 
+    if(mYaw > 180.0f)mYaw -= 360.0f;
+    if(mYaw < -180.0f)mYaw += 360.0f;
+
     if (constrainPitch) {
         if (mPitch > 89.0f) mPitch = 89.0f;
         if (mPitch < -89.0f) mPitch = -89.0f;

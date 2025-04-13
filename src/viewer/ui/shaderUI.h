@@ -25,7 +25,6 @@ public:
         ImGui::Begin(mName.c_str(), &mVisible, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
-            ImGuiStyle& style = ImGui::GetStyle();
             ImGui::SetWindowFontScale(2.0f);
 
             SHADER_TYPE currentShaderType = mViewer->getRender()->getShaderType();
