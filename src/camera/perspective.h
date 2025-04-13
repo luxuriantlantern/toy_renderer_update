@@ -15,7 +15,6 @@ public:
     PerspectiveCamera() = default;
     explicit PerspectiveCamera(const Camera& other) : Camera(other) {}
 
-
 //    void setFromIntrinsics(float fx, float fy, float cx, float cy, float near = 0.1f, float far = 100.0f) {
 //        mAspectRatio = static_cast<float>(mwidth) / static_cast<float>(mheight);
 //        mNear = near;
@@ -57,8 +56,6 @@ public:
     float getAspectRatio() const {return mAspectRatio;}
     float getNear() const {return mNear;}
     float getFar() const {return mFar;}
-
-private:
 
 };
 

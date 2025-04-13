@@ -116,11 +116,11 @@ void Viewer::processInput(GLFWwindow *window) {
     float deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    // WASD movement (up, left, down, right) and JK movement (forward, backward)
-    if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+    // WASD movement (front, left, back, right) and space shift movement (up, down)
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         mCamera->moveUp(deltaTime, mMovementSpeed);
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         mCamera->moveDown(deltaTime, mMovementSpeed);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
@@ -129,17 +129,17 @@ void Viewer::processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         mCamera->moveRight(deltaTime, mMovementSpeed);
     }
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         mCamera->moveForward(deltaTime, mMovementSpeed);
     }
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         mCamera->moveBackward(deltaTime, mMovementSpeed);
     }
 
     // Mouse movement
 
     int rightMouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-    int leftMouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+//    int leftMouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
@@ -168,6 +168,29 @@ void Viewer::processInput(GLFWwindow *window) {
     else if (rightMousePressed) {
         rightMousePressed = false;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    static auto scrollCallback = [](GLFWwindow* window, double xoffset, double yoffset) {
+        auto viewer = static_cast<Viewer*>(glfwGetWindowUserPointer(window));
+        auto camera = viewer->getCamera();
+
+        if (camera->getType() == PERSPECTIVE) {
+            auto perspCamera = std::static_pointer_cast<PerspectiveCamera>(camera);
+            float fov = perspCamera->getFov();
+
+            fov -= static_cast<float>(yoffset) * 1.0f;
+
+            fov = glm::clamp(fov, 5.0f, 180.0f);
+
+            perspCamera->setFov(fov);
+        }
+    };
+
+    static bool scrollCallbackSet = false;
+    if (!scrollCallbackSet) {
+        glfwSetWindowUserPointer(window, this);
+        glfwSetScrollCallback(window, scrollCallback);
+        scrollCallbackSet = true;
     }
 
     // if (leftMouseState == GLFW_PRESS) {

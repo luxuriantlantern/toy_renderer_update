@@ -23,6 +23,7 @@ public:
         mFront = glm::normalize(front);
         mViewMatrix = glm::lookAt(mPosition, mPosition + mFront, mUp);
 
+        mAspectRatio = static_cast<float>(w) / static_cast<float>(h);
         float orthoScale = 30.0f;
         float left = -orthoScale * mAspectRatio;
         float right = orthoScale * mAspectRatio;
@@ -34,13 +35,6 @@ public:
 
     CameraType getType() override {return ORTHOGRAPHIC;}
 
-    glm::mat4 getProjectionMatrix() const { return mProjectionMatrix; }
-
-protected:
-    glm::mat4 mProjectionMatrix{1.0f};
-
-private:
-    float mOrthoScale = 10.0f;
 };
 
 #endif //TOY_RENDERER_ORTHOGRAPHIC_H

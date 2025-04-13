@@ -62,7 +62,7 @@ private:
     float lastX = 0.0f, lastY = 0.0f;
     bool rightMousePressed = false;
     bool leftMousePressed = false;
-    float mMovementSpeed = 5.0f;
+    float mMovementSpeed = 15.0f;
     float mMouseSensitivity = 0.1f;
     int mwidth, mheight;
     std::shared_ptr<Render> mRender;
