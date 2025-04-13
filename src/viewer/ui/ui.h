@@ -13,6 +13,7 @@
 class Viewer;
 
 class ModelUI;
+class ShaderUI;
 
 class UI {
 public:

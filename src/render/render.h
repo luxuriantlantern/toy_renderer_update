@@ -23,6 +23,8 @@ public:
     virtual void setup(const std::shared_ptr<Scene>& scene) = 0;
     virtual void addModel(const std::shared_ptr<Object>& model) = 0;
     virtual void removeModel(const std::shared_ptr<Object>& model) = 0;
+    virtual void setShaderType(SHADER_TYPE type) = 0;
+    virtual SHADER_TYPE getShaderType() const = 0;
     virtual void cleanup() = 0;
     virtual void init() = 0;
 

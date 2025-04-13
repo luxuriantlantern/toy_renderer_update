@@ -13,7 +13,7 @@
 enum SHADER_TYPE
 {
     WIREFRAME,
-    SOLID,
+    Blinn_Phong,
     MATERIAL
 };
 

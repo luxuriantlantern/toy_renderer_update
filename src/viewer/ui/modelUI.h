@@ -24,6 +24,7 @@ public:
         ImGui::Begin(mName.c_str(), &mVisible, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
+            ImGui::SetWindowFontScale(2.0f);
             if (ImGui::MenuItem("Add"))
             {
                 ImGuiFileDialog::Instance()->OpenDialog(
@@ -32,7 +33,6 @@ public:
             }
             ImGui::EndMenuBar();
         }
-
         if(ImGuiFileDialog::Instance()->Display("ChooseModelDlg"))
         {
             if(ImGuiFileDialog::Instance()->IsOk())
@@ -55,7 +55,7 @@ public:
             ImGui::SameLine();
             ImGui::PushID(model.get());
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 0.7f));  // Reddish button
-            if (ImGui::Button("X", ImVec2(20, 20)))
+            if (ImGui::Button("X", ImVec2(30, 30)))
             {
                 mViewer->getRender()->removeModel(model);
                 mViewer->getScene()->removeModel(model);

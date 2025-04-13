@@ -22,5 +22,5 @@ void main() {
         vec3 result = vec3(0.6, 0.6, 0.6) * (ambient + diffuse);
         FragColor = vec4(result, 1.0);
     }
-    
+
 }

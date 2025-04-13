@@ -15,7 +15,18 @@ void Render_OpenGL::init()
         "./assets/shaders/material.vert",
         "./assets/shaders/material.frag"
         );
-    mShaders[SHADER_TYPE::MATERIAL]->init();
+    mShaders[SHADER_TYPE::WIREFRAME] = std::make_shared<shaderOpenGL>(
+        "./assets/shaders/wireframe.vert",
+        "./assets/shaders/wireframe.frag"
+        );
+    mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderOpenGL>(
+        "./assets/shaders/Blinn-Phong.vert",
+        "./assets/shaders/Blinn-Phong.frag"
+        );
+    for(auto & shader : mShaders)
+    {
+        shader.second->init();
+    }
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
     glEnable(GL_DEPTH_TEST);
 }
@@ -27,7 +38,6 @@ void Render_OpenGL::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
     glPolygonMode(GL_FRONT_AND_BACK, mCurrentShader.first == SHADER_TYPE::WIREFRAME ? GL_LINE : GL_FILL);
     glLineWidth(1.0f);
 
-    // First pass: shapes
     auto shader = mCurrentShader.second;
     shader->use();
 

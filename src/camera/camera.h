@@ -25,7 +25,6 @@ public:
     glm::mat4 getProjectionMatrix() const {return mProjectionMatrix;}
     glm::vec3 getPosition() const {return mPosition;}
     virtual CameraType getType() = 0;
-    virtual void setFromIntrinsics(float fx, float fy, float cx, float cy, float near = 0.1f, float far = 100.0f) = 0;
 
     // Movement controls
     void moveForward(float deltaTime, float speed);

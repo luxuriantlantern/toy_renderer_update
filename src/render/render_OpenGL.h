@@ -22,6 +22,12 @@ public:
         const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix
     ) override;
     SHADER_BACKEND_TYPE getType() override { return SHADER_BACKEND_TYPE::OPENGL; }
+    void setShaderType(SHADER_TYPE type) override {
+        mCurrentShader = { type, mShaders[type] };
+    }
+    SHADER_TYPE getShaderType() const override {
+        return mCurrentShader.first;
+    }
 
 private:
     struct OpenGLModelResources {
