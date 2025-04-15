@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "viewer.h"
+#include "viewer/viewer.h"
 
 void Viewer::initWindow(const std::string& title) {
     if (!glfwInit()) {

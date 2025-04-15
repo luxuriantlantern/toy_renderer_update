@@ -5,7 +5,7 @@
 #ifndef TOY_RENDERER_SCENE_H
 #define TOY_RENDERER_SCENE_H
 
-#include "../camera/camera.h"
+#include "camera/camera.h"
 #include "object.h"
 #include <memory>
 #include <vector>

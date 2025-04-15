@@ -1,10 +1,18 @@
-file(GLOB_RECURSE SRC_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/**/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/**/*.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/**/*.hpp"
+add_subdirectory(camera)
+add_subdirectory(render)
+add_subdirectory(scene)
+add_subdirectory(shader)
+add_subdirectory(viewer)
+
+
+add_executable(TR_EXE_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp)
+add_executable(TR_EXE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+
+target_link_libraries(TR_EXE_MAIN PUBLIC
+    TR_LIB_CAMERA
+    TR_LIB_RENDER
+    TR_LIB_SCENE
+    TR_LIB_SHADER
+    TR_LIB_VIEWER
+    third_party
 )
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(${PROJECT_NAME} PRIVATE ${SRC_FILES})

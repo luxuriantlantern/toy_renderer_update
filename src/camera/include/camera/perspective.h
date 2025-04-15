@@ -5,7 +5,7 @@
 #ifndef TOY_RENDERER_PERSPECTIVE_H
 #define TOY_RENDERER_PERSPECTIVE_H
 
-#include "camera.h"
+#include "camera/camera.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

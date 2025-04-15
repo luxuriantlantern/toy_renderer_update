@@ -8,7 +8,7 @@
 #include "camera/camera.h"
 #include "scene/scene.h"
 #include "scene/object.h"
-#include "../shader/shader.h"
+#include "shader/shader.h"
 
 class Render {
 public:

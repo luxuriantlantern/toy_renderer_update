@@ -2,7 +2,7 @@
 // Created by clx on 25-4-7.
 //
 
-#include "shaderOpenGL.h"
+#include "shader/shaderOpenGL.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

@@ -6,7 +6,7 @@
 #define TOY_RENDERER_UPDATE_RENDER_OPENGL_H
 
 #include "render.h"
-#include "../shader/shaderOpenGL.h"
+#include "shader/shaderOpenGL.h"
 
 
 class Render_OpenGL : public Render {

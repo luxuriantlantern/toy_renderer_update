@@ -2,10 +2,11 @@
 // Created by clx on 25-3-19.
 //
 
-#include "scene.h"
+#include "scene/scene.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "happly.h"
+#include <algorithm>
 namespace fs = std::filesystem;
 
 Scene::Scene() {
