@@ -16,3 +16,15 @@
 [submodule "third_party/glad"]
 	path = third_party/glad
 	url = git@github.com:premake-libs/glad.git
+[submodule "third_party/glslang"]
+	path = third_party/glslang
+	url = git@github.com:KhronosGroup/glslang.git
+[submodule "third_party/shaderc"]
+	path = third_party/shaderc
+	url = git@github.com:google/shaderc.git
+[submodule "third_party/SPIRV-Headers"]
+	path = third_party/SPIRV-Headers
+	url = git@github.com:KhronosGroup/SPIRV-Headers.git
+[submodule "third_party/SPIRV-Tools"]
+	path = third_party/SPIRV-Tools
+	url = git@github.com:KhronosGroup/SPIRV-Tools.git

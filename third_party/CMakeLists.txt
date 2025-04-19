@@ -37,6 +37,9 @@ target_include_directories(ImGuiFileDialog PUBLIC
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/json/single_include/nlohmann)
 
+add_subdirectory(glslang)
+add_subdirectory(shaderc)
+
 add_library(third_party_headers INTERFACE)
 target_include_directories(third_party_headers INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -51,5 +54,8 @@ target_link_libraries(third_party INTERFACE
         glm
         ImGuiFileDialog
         nlohmann_json
-       third_party_headers
+        glslang
+        shaderc
+        glslang-default-resource-limits
+        third_party_headers
 )

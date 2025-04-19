@@ -3,6 +3,7 @@ add_subdirectory(render)
 add_subdirectory(scene)
 add_subdirectory(shader)
 add_subdirectory(viewer)
+add_subdirectory(EasyVulkan)
 
 
 add_executable(TR_EXE_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp)
@@ -14,5 +15,16 @@ target_link_libraries(TR_EXE_MAIN PUBLIC
     TR_LIB_SCENE
     TR_LIB_SHADER
     TR_LIB_VIEWER
+    EASY_VULKAN
+    third_party
+)
+
+target_link_libraries(TR_EXE_TEST PUBLIC
+    TR_LIB_CAMERA
+    TR_LIB_RENDER
+    TR_LIB_SCENE
+    TR_LIB_SHADER
+    TR_LIB_VIEWER
+    EASY_VULKAN
     third_party
 )
