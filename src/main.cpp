@@ -4,7 +4,6 @@
 #include <memory>
 #include "render/render_OpenGL.h"
 #include "viewer/ui/modelUI.h"
-#include "viewer/ui/ui.h"
 #include "viewer/ui/shaderUI.h"
 #include "viewer/ui/cameraUI.h"
 
