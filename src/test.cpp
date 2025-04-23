@@ -4,7 +4,7 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/StandAlone/DirStackFileIncluder.h>
 #include <glslang/glslang/Public/ResourceLimits.h>
-#include <shaderc/shaderc.hpp>
+// #include <shaderc/shaderc.hpp>
 using namespace vulkan;
 
 descriptorSetLayout descriptorSetLayout_triangle;
