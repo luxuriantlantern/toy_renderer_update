@@ -4,7 +4,6 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/StandAlone/DirStackFileIncluder.h>
 #include <glslang/glslang/Public/ResourceLimits.h>
-// #include <shaderc/shaderc.hpp>
 using namespace vulkan;
 
 descriptorSetLayout descriptorSetLayout_triangle;
@@ -15,20 +14,25 @@ const auto& RenderPassAndFramebuffers() {
     static const auto& rpwf = easyVulkan::CreateRpwf_Screen();
     return rpwf;
 }
+
 void CreateLayout() {
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_trianglePosition = {
+    // 更新为单个uniform buffer绑定，包含所有矩阵
+    VkDescriptorSetLayoutBinding binding = {
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
     };
+
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .bindingCount = 1,
-            .pBindings = &descriptorSetLayoutBinding_trianglePosition
+            .pBindings = &binding
     };
     descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
             .pSetLayouts = descriptorSetLayout_triangle.Address()
     };
@@ -39,31 +43,25 @@ void InitGlslang() {
     glslang::InitializeProcess();
 }
 
-// 关闭 glslang
 void FinalizeGlslang() {
     glslang::FinalizeProcess();
 }
 
-
-// 编译 GLSL 到 SPIR-V（返回二进制数据）
 std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLanguage stage) {
     glslang::TShader shader(stage);
     const char* source = shaderSource.c_str();
     shader.setStrings(&source, 1);
 
-    // 设置 Vulkan 环境
     shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, 100);
     shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
     shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
-    // 编译选项
     EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
     if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
         std::cerr << "Shader compilation failed:\n" << shader.getInfoLog() << std::endl;
         return {};
     }
 
-    // 链接程序
     glslang::TProgram program;
     program.addShader(&shader);
     if (!program.link(messages)) {
@@ -71,7 +69,6 @@ std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLan
         return {};
     }
 
-    // 生成 SPIR-V
     std::vector<uint32_t> spirv;
     glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
     return spirv;
@@ -90,16 +87,15 @@ std::string readFile(const std::string& filepath) {
 }
 
 struct vertex {
-    glm::vec3 position;  // 改为vec3
-    glm::vec4 color;
+    glm::vec3 position;
+    glm::vec3 normal;
 };
 
 void CreatePipeline() {
     InitGlslang();
 
-    // 读取修改后的着色器文件
-    std::string vertShaderCode = readFile("./assets/shaders/cube.vert");
-    std::string fragShaderCode = readFile("./assets/shaders/cube.frag");
+    std::string vertShaderCode = readFile("./assets/shaders/Blinn-Phong_v.vert");
+    std::string fragShaderCode = readFile("./assets/shaders/Blinn-Phong_v.frag");
 
     std::vector<uint32_t> vertSpirv = CompileGLSLToSPIRV(vertShaderCode, EShLangVertex);
     std::vector<uint32_t> fragSpirv = CompileGLSLToSPIRV(fragShaderCode, EShLangFragment);
@@ -119,10 +115,9 @@ void CreatePipeline() {
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
         pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
 
-        // 修改顶点输入绑定和属性
         pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX);
         pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, position));
-        pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(vertex, color));
+        pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, normal));
 
         pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
@@ -144,11 +139,10 @@ void CreatePipeline() {
     Create();
 }
 
-
 int main() {
     if (!InitializeWindow({1280, 720}))
         return -1;
-    windowSize  = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
     VkExtent2D prevWindowSize = windowSize;
 
     const auto& [renderPass, framebuffers] = RenderPassAndFramebuffers();
@@ -163,75 +157,95 @@ int main() {
     commandPool commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     commandPool.AllocateBuffers(commandBuffer);
 
-
+    // 顶点数据保持不变
     vertex vertices[] = {
             // Front face
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+            {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
 
             // Back face
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+            {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+            {{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
 
             // Left face
-            {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+            {{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
+            {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
+            {{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
 
             // Right face
-            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 
             // Top face
-            {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
 
             // Bottom face
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}}
+            {{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}},
+            {{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+            {{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+            {{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}}
     };
 
     vertexBuffer vertexBuffer(sizeof(vertices));
     vertexBuffer.TransferData(vertices);
 
-    // 修改uniform buffer为存储MVP矩阵
-    uniformBuffer uniformBuffer(sizeof(glm::mat4));
+    // 定义与着色器匹配的uniform buffer结构
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
 
+    // 创建uniform buffer
+    uniformBuffer uniformBuffer(sizeof(UniformBufferObject));
+
+    // 创建描述符池和描述符集
     VkDescriptorPoolSize descriptorPoolSizes[] = {
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
     };
     descriptorPool descriptorPool(1, descriptorPoolSizes);
-    descriptorSet descriptorSet_trianglePosition;
-    descriptorPool.AllocateSets(descriptorSet_trianglePosition, descriptorSetLayout_triangle);
+    descriptorSet descriptorSet_triangle;
+    descriptorPool.AllocateSets(descriptorSet_triangle, descriptorSetLayout_triangle);
+
+    // 更新描述符集
     VkDescriptorBufferInfo bufferInfo = {
             .buffer = uniformBuffer,
             .offset = 0,
-            .range = VK_WHOLE_SIZE
+            .range = sizeof(UniformBufferObject)
     };
-    descriptorSet_trianglePosition.Write(bufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    VkWriteDescriptorSet descriptorWrite = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = descriptorSet_triangle,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo = &bufferInfo
+    };
+    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &descriptorWrite, 0, nullptr);
 
     VkClearValue clearColor = { .color = { 1.f, 0.f, 0.f, 1.f } };
 
@@ -242,42 +256,35 @@ int main() {
         int width = 0, height = 0;
         glfwGetFramebufferSize(pWindow, &width, &height);
 
-        // Check for window resize
         if (width > 0 && height > 0 &&
             (width != prevWindowSize.width || height != prevWindowSize.height)) {
-
-            // Wait for the device to finish operations before recreating swapchain
             graphicsBase::Base().WaitIdle();
-
-            // Update window size
             windowSize.width = width;
             windowSize.height = height;
-
-            // Recreate swapchain
             if (graphicsBase::Base().RecreateSwapchain()) {
                 std::cerr << "Failed to recreate swapchain\n";
                 break;
             }
-
-            // Update the previous size
             prevWindowSize = windowSize;
-            continue; // Skip this frame and start with the new swapchain
+            continue;
         }
+
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float>(currentTime - startTime).count();
 
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                                     glm::vec3(0.0f, 0.0f, 0.0f),
-                                     glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f),
+        // 更新uniform buffer数据
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, -2.0f, 2.0f),
+                               glm::vec3(0.0f, 0.0f, 0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.projection = glm::perspective(glm::radians(45.0f),
                                           (float)windowSize.width / (float)windowSize.height,
                                           0.1f, 10.0f);
-        proj[1][1] *= -1;  // 适应Vulkan坐标系
+        ubo.projection[1][1] *= -1;  // 适应Vulkan坐标系
 
-        glm::mat4 mvp = proj * view * model;
-        uniformBuffer.TransferData(&mvp, sizeof(mvp));
+        uniformBuffer.TransferData(&ubo, sizeof(ubo));
 
         graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
         auto i = graphicsBase::Base().CurrentImageIndex();
@@ -288,7 +295,7 @@ int main() {
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer.Address(), &offset);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout_triangle, 0, 1, descriptorSet_trianglePosition.Address(), 0, nullptr);
+                                pipelineLayout_triangle, 0, 1, descriptorSet_triangle.Address(), 0, nullptr);
         vkCmdDraw(commandBuffer, 36, 1, 0, 0);
         renderPass.CmdEnd(commandBuffer);
         commandBuffer.End();
