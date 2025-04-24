@@ -9,5 +9,6 @@ target_include_directories(TR_LIB_SHADER PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_link_libraries(TR_LIB_SHADER PUBLIC
+        EASY_VULKAN
         third_party # TODO: 不要third_party, 单独拆出来
 )

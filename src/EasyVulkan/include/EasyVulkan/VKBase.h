@@ -84,8 +84,8 @@ namespace vulkan {
 
         VkDebugUtilsMessengerEXT debugMessenger;
 
-        std::vector<void(*)()> callbacks_createSwapchain;
-        std::vector<void(*)()> callbacks_destroySwapchain;
+        std::vector<std::function<void()>> callbacks_createSwapchain;
+        std::vector<std::function<void()>> callbacks_destroySwapchain;
         std::vector<void(*)()> callbacks_createDevice;
         std::vector<void(*)()> callbacks_destroyDevice;
 
@@ -339,10 +339,10 @@ namespace vulkan {
         }
 
         //Non-const Function
-        void AddCallback_CreateSwapchain(void(*function)()) {
+        void AddCallback_CreateSwapchain(std::function<void()> function) {
             callbacks_createSwapchain.push_back(function);
         }
-        void AddCallback_DestroySwapchain(void(*function)()) {
+        void AddCallback_DestroySwapchain(std::function<void()> function) {
             callbacks_destroySwapchain.push_back(function);
         }
         void AddCallback_CreateDevice(void(*function)()) {

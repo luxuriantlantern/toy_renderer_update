@@ -37,6 +37,7 @@ public:
     virtual void setMat4(const std::string &name, const glm::mat4 &mat) const = 0;
 
 protected:
+    SHADER_TYPE mShaderType;
     SHADER_BACKEND_TYPE mBackendType;
     std::string mVertexPath;
     std::string mFragmentPath;
