@@ -60,8 +60,6 @@ void shaderVulkan::LoadShaders(const std::string &vertexPath, const std::string 
     vert.Create(vertSpirv.size() * sizeof(uint32_t), vertSpirv.data());
     frag.Create(fragSpirv.size() * sizeof(uint32_t), fragSpirv.data());
 
-    shaderStageCreateInfos_triangle[0] = vert.StageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT);
-    shaderStageCreateInfos_triangle[1] = frag.StageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT);
     stageCount = 2;
 
     glslang::FinalizeProcess();
@@ -89,6 +87,11 @@ void shaderVulkan::init()
         .pSetLayouts = descriptorSetLayout_triangle.Address()
     };
     pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
+
+    static VkPipelineShaderStageCreateInfo shaderStageCreateInfos_triangle[2] = {
+            vert.StageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
+            frag.StageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)
+    };
 
     auto Create = [this] {
         graphicsPipelineCreateInfoPack pipelineCiPack;
@@ -130,7 +133,7 @@ void shaderVulkan::init()
     Create();
 
     commandPool commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    commandPool.AllocateBuffers(commandBuffer);
+    commandPool.AllocateBuffers(mcommandBuffer);
 
 
 }
@@ -138,22 +141,67 @@ void shaderVulkan::init()
 void shaderVulkan::initForUniform()
 {
     mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-    mbufferInfo = {
-        .buffer = muniformBuffer,
-        .offset = 0,
-        .range = sizeof(uniformBufferObject)
-    };
-    mdescriptorWrite = {
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = mdescriptorSet_triangle,
-        .dstBinding = 0,
-        .dstArrayElement = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = &mbufferInfo
-    };
+    mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
+            .buffer = muniformBuffer,
+            .offset = 0,
+            .range = sizeof(uniformBufferObject)
+    });
+    mdescriptorWrite = std::make_unique<VkWriteDescriptorSet>(VkWriteDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = mdescriptorSet_triangle,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo = mbufferInfo.get()
+    });
 }
 
 void shaderVulkan::use() {
-    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &mdescriptorWrite, 0, nullptr);
+    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, mdescriptorWrite.get(), 0, nullptr);
+}
+
+void shaderVulkan::setBool(const std::string &name, bool value) const {
+    (void)name;
+    (void)value;
+}
+
+void shaderVulkan::setInt(const std::string &name, int value) const {
+    (void)name;
+    (void)value;
+}
+
+void shaderVulkan::setFloat(const std::string &name, float value) const {
+    (void)name;
+    (void)value;
+}
+
+void shaderVulkan::setVec3(const std::string &name, const glm::vec3 &value) const {
+    (void)name;
+    (void)value;
+}
+
+void shaderVulkan::setMat4(const std::string &name, const glm::mat4 &mat) const {
+    (void)name;
+    (void)mat;
+}
+
+void shaderVulkan::cleanup() {
+    if(mBackendType != VULKAN) return;
+    graphicsBase::Base().WaitIdle();
+
+    mfence.~fence();
+    msemaphore_imageIsAvailable.~semaphore();
+    msemaphore_renderingIsOver.~semaphore();
+
+    pipeline_triangle.~pipeline();
+    pipelineLayout_triangle.~pipelineLayout();
+    descriptorSetLayout_triangle.~descriptorSetLayout();
+
+    mdescriptorPool.~descriptorPool();
+
+    muniformBuffer.~uniformBuffer();
+
+    vert.~shaderModule();
+    frag.~shaderModule();
 }

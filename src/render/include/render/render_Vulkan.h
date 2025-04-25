@@ -31,13 +31,12 @@ private:
     void cleanup() override;
     void loadTexture(const std::string& path, GLuint& textureID);
     struct VulkanModelResources {
-        std::vector<VkBuffer> vertexBuffers;
-        std::vector<VkDeviceMemory> vertexMemories;
-        std::vector<VkImage> textures;
-        std::vector<VkImageView> textureViews;
-        std::vector<VkSampler> samplers;
-        std::vector<VkDescriptorSet> descriptorSets;
+        std::vector<vertexBuffer> vertexBuffers;
+//        std::vector<VkDescriptorSet> descriptorSets;
         std::vector<uint32_t> vertexCounts;
+//        std::vector<VkImage> textures;
+//        std::vector<VkImageView> textureViews;
+//        std::vector<VkSampler> samplers;
     };
 
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;

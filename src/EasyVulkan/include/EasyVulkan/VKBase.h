@@ -2016,6 +2016,10 @@ namespace vulkan {
         deviceLocalBuffer(VkDeviceSize size, VkBufferUsageFlags desiredUsages_Without_transfer_dst) {
             Create(size, desiredUsages_Without_transfer_dst);
         }
+        void Destroy() {
+            graphicsBase::Base().WaitIdle();
+            mbufferMemory.~bufferMemory();
+        }
         //Getter
         operator VkBuffer() const { return mbufferMemory.Buffer(); }
         const VkBuffer* Address() const { return mbufferMemory.AddressOfBuffer(); }

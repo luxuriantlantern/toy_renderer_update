@@ -31,12 +31,22 @@ public:
         if(mBackendType != OPENGL) return;
         glUseProgram(mProgram);
     }
+    void setShaderType(SHADER_TYPE type) override{
+        mShaderType = type;
+    }
     GLuint compileShaderProgram(const std::string &path, GLenum type);
     void setBool(const std::string &name, bool value) const override;
     void setInt(const std::string &name, int value) const override;
     void setFloat(const std::string &name, float value) const override;
     void setVec3(const std::string &name, const glm::vec3 &value) const override;
     void setMat4(const std::string &name, const glm::mat4 &mat) const override;
+
+    semaphore& getSemaphoreImageIsAvailable() override {
+        throw std::logic_error("OpenGL backend does not support getSemaphoreImageIsAvailable");
+    }
+    uniformBuffer& getUniformBuffer() override {
+        throw std::logic_error("OpenGL backend does not support getUniformBuffer");
+    }
 
 private:
 
