@@ -302,11 +302,11 @@ int main() {
 
         graphicsBase::Base().SubmitCommandBuffer_Graphics(commandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, fence);
         graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
-
+        fence.WaitAndReset();
         glfwPollEvents();
         TitleFps();
 
-        fence.WaitAndReset();
+
     }
     TerminateWindow();
     return 0;

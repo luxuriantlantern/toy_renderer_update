@@ -1,3 +1,6 @@
+#ifndef VKFORMAT_H
+#define VKFORMAT_H
+
 #pragma once
 #include "EasyVKStart.h"
 
@@ -229,3 +232,5 @@ constexpr formatInfo formatInfos_v1_0[] = {
     { 4, 0, 0, 1 },//VK_FORMAT_ASTC_12x12_UNORM_BLOCK = 183,
     { 4, 0, 0, 1 },//VK_FORMAT_ASTC_12x12_SRGB_BLOCK = 184,
 };
+
+#endif

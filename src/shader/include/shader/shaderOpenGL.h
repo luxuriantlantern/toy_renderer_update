@@ -47,6 +47,33 @@ public:
     uniformBuffer& getUniformBuffer() override {
         throw std::logic_error("OpenGL backend does not support getUniformBuffer");
     }
+//    renderPass& getRenderPass() override {
+//        throw std::logic_error("OpenGL backend does not support getRenderPass");
+//    }
+//    std::vector<framebuffer>& getFramebuffer() override {
+//        throw std::logic_error("OpenGL backend does not support getFramebuffer");
+//    }
+    commandBuffer& getCommandBuffer() override {
+        throw std::logic_error("OpenGL backend does not support getCommandBuffer");
+    }
+    fence& getFence() override {
+        throw std::logic_error("OpenGL backend does not support getFence");
+    }
+    semaphore& getSemaphoreRenderingIsOver() override {
+        throw std::logic_error("OpenGL backend does not support getSemaphoreRenderingIsOver");
+    }
+    VkClearValue & getClearValue() override {
+        throw std::logic_error("OpenGL backend does not support getClearValue");
+    }
+    descriptorSet& getDescriptorSet() override {
+        throw std::logic_error("OpenGL backend does not support getDescriptorSet");
+    }
+    pipelineLayout& getPipelineLayout() override {
+        throw std::logic_error("OpenGL backend does not support getPipelineLayout");
+    }
+    pipeline& getPipeline() override {
+        throw std::logic_error("OpenGL backend does not support getPipeline");
+    }
 
 private:
 

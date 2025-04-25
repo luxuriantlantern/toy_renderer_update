@@ -1,3 +1,6 @@
+#ifndef TOY_RENDERER_UPDATE_VKBASE_H
+#define TOY_RENDERER_UPDATE_VKBASE_H
+
 #pragma once
 #include "EasyVKStart.h"
 #include "VKFormat.h"
@@ -2303,3 +2306,5 @@ namespace vulkan {
         }
     };
 }
+
+#endif

@@ -11,7 +11,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include "EasyVulkan/GlfwGeneral.hpp"
-#include "EasyVulkan/easyVulkan.h"
 #include <glslang/glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/StandAlone/DirStackFileIncluder.h>
@@ -64,8 +63,15 @@ public:
     void setVec3(const std::string &name, const glm::vec3 &value) const override;
     void setMat4(const std::string &name, const glm::mat4 &mat) const override;
 
-    semaphore& getSemaphoreImageIsAvailable() { return msemaphore_imageIsAvailable; }
-    uniformBuffer& getUniformBuffer() { return muniformBuffer; }
+    semaphore& getSemaphoreImageIsAvailable() override { return msemaphore_imageIsAvailable; }
+    uniformBuffer& getUniformBuffer() override { return muniformBuffer; }
+    commandBuffer& getCommandBuffer() override { return mcommandBuffer; }
+    fence& getFence() override { return mfence; }
+    semaphore& getSemaphoreRenderingIsOver() override { return msemaphore_renderingIsOver; }
+    VkClearValue& getClearValue() override { return mclearColor; }
+    descriptorSet& getDescriptorSet() override { return mdescriptorSet_triangle; }
+    pipelineLayout& getPipelineLayout() override { return pipelineLayout_triangle; }
+    pipeline& getPipeline() override { return pipeline_triangle; }
 
 private:
     shaderModule vert, frag, geom;
@@ -85,10 +91,8 @@ private:
             nullptr,
             nullptr
     });
-    std::unique_ptr<VkClearValue> mclearColor = std::make_unique<VkClearValue>(VkClearValue{ .color = { 0.f, 0.f, 0.f, 1.f } });
+    VkClearValue mclearColor = VkClearValue{ .color = { 0.f, 0.f, 0.f, 1.f } };
     void initForUniform();
-    renderPass mrenderpass;
-    framebuffer mframebuffer;
 
     fence mfence;
     semaphore msemaphore_imageIsAvailable;

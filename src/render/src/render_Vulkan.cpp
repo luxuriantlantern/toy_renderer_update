@@ -9,6 +9,9 @@
 #include "stb_image.h"
 #include <iostream>
 
+static const auto&[RenderPass, Framebuffers] = easyVulkan::CreateRpwf_Screen();
+
+
 void Render_Vulkan::init() {
     mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
             "./assets/shaders/Blinn-Phong_v.vert",
@@ -107,6 +110,7 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
     shader->use();
 
     auto models = scene->getModels();
+    size_t idx = 0;
     for (const auto& model : models)
     {
         shaderVulkan::uniformBufferObject ubo{};
@@ -120,18 +124,26 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         graphicsBase::Base().SwapImage(shader->getSemaphoreImageIsAvailable());
         auto i = graphicsBase::Base().CurrentImageIndex();
 
-        commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        renderPass.CmdBegin(commandBuffer, framebuffers[i], { {}, windowSize }, clearColor);
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer.Address(), &offset);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout_triangle, 0, 1, descriptorSet_triangle.Address(), 0, nullptr);
-        vkCmdDraw(commandBuffer, 36, 1, 0, 0);
-        renderPass.CmdEnd(commandBuffer);
-        commandBuffer.End();
+        commandBuffer CommandBuffer = std::move(shader->getCommandBuffer());
 
-        graphicsBase::Base().SubmitCommandBuffer_Graphics(commandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, fence);
+        fence Fence = std::move(shader->getFence());
+        semaphore semaphore_imageIsAvailable = std::move(shader->getSemaphoreImageIsAvailable());
+        semaphore semaphore_renderingIsOver = std::move(shader->getSemaphoreRenderingIsOver());
+
+        CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        RenderPass.CmdBegin(CommandBuffer, Framebuffers[i], { {}, windowSize }, shader->getClearValue());
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
+        vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
+        vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0, nullptr);
+        vkCmdDraw(CommandBuffer, mModelResources[model].vertexCounts[idx], 1, 0, 0);
+        RenderPass.CmdEnd(CommandBuffer);
+        CommandBuffer.End();
+
+        graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, shader->getFence());
         graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
+        shader->getFence().WaitAndReset();
+        idx ++;
     }
 }
