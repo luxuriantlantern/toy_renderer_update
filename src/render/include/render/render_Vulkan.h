@@ -8,6 +8,8 @@
 #include "render.h"
 #include "shader/shaderVulkan.h"
 
+
+
 class Render_Vulkan : public Render{
 public:
     Render_Vulkan() = default;
@@ -38,7 +40,7 @@ private:
 //        std::vector<VkImageView> textureViews;
 //        std::vector<VkSampler> samplers;
     };
-
+    easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_Screen();
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;
 };
 

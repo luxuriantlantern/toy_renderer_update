@@ -67,11 +67,13 @@ void shaderVulkan::LoadShaders(const std::string &vertexPath, const std::string 
 
 void shaderVulkan::init()
 {
+    LoadShaders(mVertexPath, mFragmentPath, mGeometryPath);
+
     VkDescriptorSetLayoutBinding binding = {
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
     };
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {

@@ -9,9 +9,6 @@
 #include "stb_image.h"
 #include <iostream>
 
-static const auto&[RenderPass, Framebuffers] = easyVulkan::CreateRpwf_Screen();
-
-
 void Render_Vulkan::init() {
     mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
             "./assets/shaders/Blinn-Phong_v.vert",
@@ -45,7 +42,6 @@ Render_Vulkan::~Render_Vulkan() {
 void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
     VulkanModelResources resources;
 
-    // 假设 Object 有 getShapes()，每个 shape 有 getVertices()、getIndices() 等
     size_t shapeCount = model->getShapeCount();
     for (size_t i = 0; i < shapeCount; ++i) {
         const std::vector<glm::vec3>& vertices = model->getVertices(i);
@@ -107,7 +103,6 @@ void Render_Vulkan::removeModel(const std::shared_ptr<Object>& model)
 void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix)
 {
     auto shader = mCurrentShader.second;
-    shader->use();
 
     auto models = scene->getModels();
     size_t idx = 0;
@@ -131,14 +126,14 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         semaphore semaphore_renderingIsOver = std::move(shader->getSemaphoreRenderingIsOver());
 
         CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        RenderPass.CmdBegin(CommandBuffer, Framebuffers[i], { {}, windowSize }, shader->getClearValue());
+        rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], { {}, windowSize }, shader->getClearValue());
         VkDeviceSize offset = 0;
         vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
         vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
         vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0, nullptr);
         vkCmdDraw(CommandBuffer, mModelResources[model].vertexCounts[idx], 1, 0, 0);
-        RenderPass.CmdEnd(CommandBuffer);
+        rpwf.pass.CmdEnd(CommandBuffer);
         CommandBuffer.End();
 
         graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, shader->getFence());
