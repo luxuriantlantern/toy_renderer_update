@@ -134,10 +134,8 @@ void shaderVulkan::init()
     graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
     Create();
 
-    commandPool commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    commandPool.AllocateBuffers(mcommandBuffer);
-
-
+    mcommandPool.AllocateBuffers(mcommandBuffer);
+    initForUniform();
 }
 
 void shaderVulkan::initForUniform()
@@ -157,6 +155,8 @@ void shaderVulkan::initForUniform()
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .pBufferInfo = mbufferInfo.get()
     });
+
+    use();
 }
 
 void shaderVulkan::use() {

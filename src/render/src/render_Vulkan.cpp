@@ -56,11 +56,10 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
                 buffer.push_back({vertices[j], normals[j], texCoords[j]});
             }
 
-            vertexBuffer vertexBuffer(buffer.size() * sizeof(shaderVulkan::material));
-            vertexBuffer.TransferData(buffer);
-
-            resources.vertexBuffers.push_back(std::move(vertexBuffer));
+            resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::material));
+            resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::material));
             resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
+
         }
         else
         {
@@ -69,10 +68,8 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
                 buffer.push_back({vertices[j], normals[j]});
             }
 
-            vertexBuffer vertexBuffer(buffer.size() * sizeof(shaderVulkan::vertex));
-            vertexBuffer.TransferData(buffer);
-
-            resources.vertexBuffers.push_back(std::move(vertexBuffer));
+            resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
+            resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
             resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
         }
 //  TODO: add 2d texture
@@ -103,7 +100,6 @@ void Render_Vulkan::removeModel(const std::shared_ptr<Object>& model)
 void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix)
 {
     auto shader = mCurrentShader.second;
-
     auto models = scene->getModels();
     size_t idx = 0;
     for (const auto& model : models)
@@ -112,18 +108,17 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         ubo.model = model->getModelMatrix();
         ubo.view = viewMatrix;
         ubo.proj = projectionMatrix;
-        ubo.proj[1][1] *= -1;
 
         shader->getUniformBuffer().TransferData(&ubo, sizeof(ubo));
 
         graphicsBase::Base().SwapImage(shader->getSemaphoreImageIsAvailable());
         auto i = graphicsBase::Base().CurrentImageIndex();
 
-        commandBuffer CommandBuffer = std::move(shader->getCommandBuffer());
+        commandBuffer& CommandBuffer = shader->getCommandBuffer();
 
-        fence Fence = std::move(shader->getFence());
-        semaphore semaphore_imageIsAvailable = std::move(shader->getSemaphoreImageIsAvailable());
-        semaphore semaphore_renderingIsOver = std::move(shader->getSemaphoreRenderingIsOver());
+        fence& Fence = shader->getFence();
+        semaphore& semaphore_imageIsAvailable = shader->getSemaphoreImageIsAvailable();
+        semaphore& semaphore_renderingIsOver = shader->getSemaphoreRenderingIsOver();
 
         CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], { {}, windowSize }, shader->getClearValue());
@@ -136,9 +131,9 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         rpwf.pass.CmdEnd(CommandBuffer);
         CommandBuffer.End();
 
-        graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, shader->getFence());
+        graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, Fence);
         graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
-        shader->getFence().WaitAndReset();
+        Fence.WaitAndReset();
         idx ++;
     }
 }
