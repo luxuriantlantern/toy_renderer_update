@@ -1,313 +1,173 @@
 #include "EasyVulkan/GlfwGeneral.hpp"
-#include "EasyVulkan/easyVulkan.h"
-#include <glslang/glslang/Public/ShaderLang.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
-#include <glslang/StandAlone/DirStackFileIncluder.h>
-#include <glslang/glslang/Public/ResourceLimits.h>
+#include "EasyVulkan/easyvulkan.h"
 using namespace vulkan;
 
-descriptorSetLayout descriptorSetLayout_triangle;
-pipelineLayout pipelineLayout_triangle;
-pipeline pipeline_triangle;
-
-const auto& RenderPassAndFramebuffers() {
-    static const auto& rpwf = easyVulkan::CreateRpwf_Screen();
-    return rpwf;
-}
-
-void CreateLayout() {
-    // 更新为单个uniform buffer绑定，包含所有矩阵
-    VkDescriptorSetLayoutBinding binding = {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-    };
-
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = 1,
-            .pBindings = &binding
-    };
-    descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
-
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 1,
-            .pSetLayouts = descriptorSetLayout_triangle.Address()
-    };
-    pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
-}
-
-void InitGlslang() {
-    glslang::InitializeProcess();
-}
-
-void FinalizeGlslang() {
-    glslang::FinalizeProcess();
-}
-
-std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLanguage stage) {
-    glslang::TShader shader(stage);
-    const char* source = shaderSource.c_str();
-    shader.setStrings(&source, 1);
-
-    shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, 100);
-    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
-
-    EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
-    if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
-        std::cerr << "Shader compilation failed:\n" << shader.getInfoLog() << std::endl;
-        return {};
-    }
-
-    glslang::TProgram program;
-    program.addShader(&shader);
-    if (!program.link(messages)) {
-        std::cerr << "Shader linking failed:\n" << program.getInfoLog() << std::endl;
-        return {};
-    }
-
-    std::vector<uint32_t> spirv;
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
-    return spirv;
-}
-
-std::string readFile(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + filepath);
-    }
-
-    std::string content((std::istreambuf_iterator<char>(file)),
-                        std::istreambuf_iterator<char>());
-    file.close();
-    return content;
-}
-
 struct vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
+	glm::vec3 position;
+	glm::vec4 color;
 };
 
+pipelineLayout pipelineLayout_into3d;
+pipeline pipeline_into3d;
+const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() {
+	static const auto& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
+	return rpwf;
+}
+void CreateLayout() {
+	VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_VERTEX_BIT, 0, 64 };
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &pushConstantRange
+	};
+	pipelineLayout_into3d.Create(pipelineLayoutCreateInfo);
+}
 void CreatePipeline() {
-    InitGlslang();
+	static shaderModule vert("./assets/Into3d.vert.spv");
+	static shaderModule frag("./assets/Into3d.frag.spv");
+	static VkPipelineShaderStageCreateInfo shaderStageCreateInfos_into3d[2] = {
+		vert.StageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
+		frag.StageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)
+	};
+	auto Create = [] {
+		graphicsPipelineCreateInfoPack pipelineCiPack;
+		pipelineCiPack.createInfo.layout = pipelineLayout_into3d;
+		pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
+		pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX);
+		pipelineCiPack.vertexInputBindings.emplace_back(1, sizeof(glm::vec3), VK_VERTEX_INPUT_RATE_INSTANCE);
+		pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, position));
+		pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(vertex, color));
+		pipelineCiPack.vertexInputAttributes.emplace_back(2, 1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+		pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
+		pipelineCiPack.scissors.emplace_back(VkOffset2D{}, windowSize);
+		pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_BACK_BIT;
+		pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;//Default
+		pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		pipelineCiPack.depthStencilStateCi.depthTestEnable = VK_TRUE;
+		pipelineCiPack.depthStencilStateCi.depthWriteEnable = VK_TRUE;
+		pipelineCiPack.depthStencilStateCi.depthCompareOp = VK_COMPARE_OP_LESS;
+		pipelineCiPack.colorBlendAttachmentStates.push_back({ .colorWriteMask = 0b1111 });
+		pipelineCiPack.UpdateAllArrays();
+		pipelineCiPack.createInfo.stageCount = 2;
+		pipelineCiPack.createInfo.pStages = shaderStageCreateInfos_into3d;
+		pipeline_into3d.Create(pipelineCiPack);
+	};
+	auto Destroy = [] {
+		pipeline_into3d.~pipeline();
+	};
+	graphicsBase::Base().AddCallback_CreateSwapchain(Create);
+	graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
+	Create();
+}
 
-    std::string vertShaderCode = readFile("./assets/shaders/Blinn-Phong_v.vert");
-    std::string fragShaderCode = readFile("./assets/shaders/Blinn-Phong_v.frag");
-
-    std::vector<uint32_t> vertSpirv = CompileGLSLToSPIRV(vertShaderCode, EShLangVertex);
-    std::vector<uint32_t> fragSpirv = CompileGLSLToSPIRV(fragShaderCode, EShLangFragment);
-
-    static shaderModule vert(vertSpirv.size() * sizeof(uint32_t), vertSpirv.data());
-    static shaderModule frag(fragSpirv.size() * sizeof(uint32_t), fragSpirv.data());
-
-    FinalizeGlslang();
-
-    static VkPipelineShaderStageCreateInfo shaderStageCreateInfos_triangle[2] = {
-            vert.StageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
-            frag.StageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)
-    };
-
-    auto Create = [] {
-        graphicsPipelineCreateInfoPack pipelineCiPack;
-        pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
-        pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
-
-        pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX);
-        pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, position));
-        pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, normal));
-
-        pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
-        pipelineCiPack.scissors.emplace_back(VkOffset2D{}, windowSize);
-        pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        pipelineCiPack.colorBlendAttachmentStates.push_back({ .colorWriteMask = 0b1111 });
-
-        pipelineCiPack.UpdateAllArrays();
-        pipelineCiPack.createInfo.stageCount = 2;
-        pipelineCiPack.createInfo.pStages = shaderStageCreateInfos_triangle;
-
-        pipeline_triangle.Create(pipelineCiPack);
-    };
-
-    auto Destroy = [] { pipeline_triangle.~pipeline(); };
-
-    graphicsBase::Base().AddCallback_CreateSwapchain(Create);
-    graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
-    Create();
+inline glm::mat4 FlipVertical(const glm::mat4& projection) {
+	glm::mat4 _projection = projection;
+	for (uint32_t i = 0; i < 4; i++)
+		_projection[i][1] *= -1;
+	return _projection;
 }
 
 int main() {
-    if (!InitializeWindow({1280, 720}))
-        return -1;
-    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
-    VkExtent2D prevWindowSize = windowSize;
+	if (!InitializeWindow({ 1280, 720 }))
+		return -1;
 
-    const auto& [renderPass, framebuffers] = RenderPassAndFramebuffers();
-    CreateLayout();
-    CreatePipeline();
+	const auto& [renderPass, framebuffers] = RenderPassAndFramebuffers();
+	CreateLayout();
+	CreatePipeline();
 
-    fence fence;
-    semaphore semaphore_imageIsAvailable;
-    semaphore semaphore_renderingIsOver;
+	fence fence;
+	semaphore semaphore_imageIsAvailable;
+	semaphore semaphore_renderingIsOver;
 
-    commandBuffer commandBuffer;
-    commandPool commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    commandPool.AllocateBuffers(commandBuffer);
+	commandBuffer commandBuffer;
+	commandPool commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	commandPool.AllocateBuffers(commandBuffer);
 
-    // 顶点数据保持不变
-    vertex vertices[] = {
-            // Front face
-            {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	vertex vertices[] = {
+		//x+
+		{ {  1,  1, -1 }, { 1, 0, 0, 1 } },
+		{ {  1, -1, -1 }, { 1, 0, 0, 1 } },
+		{ {  1,  1,  1 }, { 1, 0, 0, 1 } },
+		{ {  1, -1,  1 }, { 1, 0, 0, 1 } },
+		//x-
+		{ { -1,  1,  1 }, { 0, 1, 1, 1 } },
+		{ { -1, -1,  1 }, { 0, 1, 1, 1 } },
+		{ { -1,  1, -1 }, { 0, 1, 1, 1 } },
+		{ { -1, -1, -1 }, { 0, 1, 1, 1 } },
+		//y+
+		{ {  1,  1, -1 }, { 0, 1, 0, 1 } },
+		{ {  1,  1,  1 }, { 0, 1, 0, 1 } },
+		{ { -1,  1, -1 }, { 0, 1, 0, 1 } },
+		{ { -1,  1,  1 }, { 0, 1, 0, 1 } },
+		//y-
+		{ {  1, -1, -1 }, { 1, 0, 1, 1 } },
+		{ { -1, -1, -1 }, { 1, 0, 1, 1 } },
+		{ {  1, -1,  1 }, { 1, 0, 1, 1 } },
+		{ { -1, -1,  1 }, { 1, 0, 1, 1 } },
+		//z+
+		{ {  1,  1,  1 }, { 0, 0, 1, 1 } },
+		{ {  1, -1,  1 }, { 0, 0, 1, 1 } },
+		{ { -1,  1,  1 }, { 0, 0, 1, 1 } },
+		{ { -1, -1,  1 }, { 0, 0, 1, 1 } },
+		//z-
+		{ { -1,  1, -1 }, { 1, 1, 0, 1 } },
+		{ { -1, -1, -1 }, { 1, 1, 0, 1 } },
+		{ {  1,  1, -1 }, { 1, 1, 0, 1 } },
+		{ {  1, -1, -1 }, { 1, 1, 0, 1 } }
+	};
+	vertexBuffer vertexBuffer_perVertex(sizeof vertices);
+	vertexBuffer_perVertex.TransferData(vertices);
+	glm::vec3 offsets[] = {
+        { -4, -4,  6 }, {  4, -4,  6 },
+        { -4,  4, 10 }, {  4,  4, 10 },
+        { -4, -4, 14 }, {  4, -4, 14 },
+        { -4,  4, 18 }, {  4,  4, 18 },
+        { -4, -4, 22 }, {  4, -4, 22 },
+        { -4,  4, 26 }, {  4,  4, 26 }
+	};
+	vertexBuffer vertexBuffer_perInstance(sizeof offsets);
+	vertexBuffer_perInstance.TransferData(offsets);
+	uint16_t indices[36] = { 0, 1, 2, 2, 1, 3 };
+	for (size_t i = 1; i < 6; i++)
+		for (size_t j = 0; j < 6; j++)
+			indices[i * 6 + j] = indices[j] + i * 4;
+	indexBuffer indexBuffer(sizeof indices);
+	indexBuffer.TransferData(indices);
 
-            // Back face
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+	glm::mat4 proj = FlipVertical(glm::infinitePerspectiveLH_ZO(glm::radians(60.f), float(windowSize.width) / windowSize.height, 0.1f));
 
-            // Left face
-            {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+	VkClearValue clearValues[2] = {
+		{ .color = { 0.f, 0.f, 0.f, 1.f } },
+		{ .depthStencil = { 1.f, 0 } }
+	};
 
-            // Right face
-            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	while (!glfwWindowShouldClose(pWindow)) {
+		while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
+			glfwWaitEvents();
 
-            // Top face
-            {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
+		auto i = graphicsBase::Base().CurrentImageIndex();
 
-            // Bottom face
-            {{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
-            {{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}}
-    };
+		commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		renderPass.CmdBegin(commandBuffer, framebuffers[i], { {}, windowSize }, clearValues);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_into3d);
+		VkBuffer buffers[2] = { vertexBuffer_perVertex, vertexBuffer_perInstance };
+		VkDeviceSize offsets[2] = {};
+		vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdPushConstants(commandBuffer, pipelineLayout_into3d, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &proj);
+		vkCmdDrawIndexed(commandBuffer, 36, 12, 0, 0, 0);
+		renderPass.CmdEnd(commandBuffer);
+		commandBuffer.End();
 
-    vertexBuffer vertexBuffer(sizeof(vertices));
-    vertexBuffer.TransferData(vertices);
+		graphicsBase::Base().SubmitCommandBuffer_Graphics(commandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, fence, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+		graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
 
-    // 定义与着色器匹配的uniform buffer结构
-    struct UniformBufferObject {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
+		glfwPollEvents();
+		TitleFps();
 
-    // 创建uniform buffer
-    uniformBuffer uniformBuffer(sizeof(UniformBufferObject));
-
-    // 创建描述符池和描述符集
-    VkDescriptorPoolSize descriptorPoolSizes[] = {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
-    };
-    descriptorPool descriptorPool(1, descriptorPoolSizes);
-    descriptorSet descriptorSet_triangle;
-    descriptorPool.AllocateSets(descriptorSet_triangle, descriptorSetLayout_triangle);
-
-    // 更新描述符集
-    VkDescriptorBufferInfo bufferInfo = {
-            .buffer = uniformBuffer,
-            .offset = 0,
-            .range = sizeof(UniformBufferObject)
-    };
-
-    VkWriteDescriptorSet descriptorWrite = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = descriptorSet_triangle,
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .pBufferInfo = &bufferInfo
-    };
-    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &descriptorWrite, 0, nullptr);
-
-    VkClearValue clearColor = { .color = { 1.f, 0.f, 0.f, 1.f } };
-
-    while (!glfwWindowShouldClose(pWindow)) {
-        while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
-            glfwWaitEvents();
-
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(pWindow, &width, &height);
-
-        if (width > 0 && height > 0 &&
-            (width != prevWindowSize.width || height != prevWindowSize.height)) {
-            graphicsBase::Base().WaitIdle();
-            windowSize.width = width;
-            windowSize.height = height;
-            if (graphicsBase::Base().RecreateSwapchain()) {
-                std::cerr << "Failed to recreate swapchain\n";
-                break;
-            }
-            prevWindowSize = windowSize;
-            continue;
-        }
-
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float>(currentTime - startTime).count();
-
-        // 更新uniform buffer数据
-        UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, -2.0f, 2.0f),
-                               glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.projection = glm::perspective(glm::radians(45.0f),
-                                          (float)windowSize.width / (float)windowSize.height,
-                                          0.1f, 10.0f);
-        ubo.projection[1][1] *= -1;  // 适应Vulkan坐标系
-
-        uniformBuffer.TransferData(&ubo, sizeof(ubo));
-
-        graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
-        auto i = graphicsBase::Base().CurrentImageIndex();
-
-        commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        renderPass.CmdBegin(commandBuffer, framebuffers[i], { {}, windowSize }, clearColor);
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer.Address(), &offset);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout_triangle, 0, 1, descriptorSet_triangle.Address(), 0, nullptr);
-        vkCmdDraw(commandBuffer, 36, 1, 0, 0);
-        renderPass.CmdEnd(commandBuffer);
-        commandBuffer.End();
-
-        graphicsBase::Base().SubmitCommandBuffer_Graphics(commandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, fence);
-        graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
-        fence.WaitAndReset();
-        glfwPollEvents();
-        TitleFps();
-
-
-    }
-    TerminateWindow();
-    return 0;
+		fence.WaitAndReset();
+	}
+	TerminateWindow();
+	return 0;
 }
