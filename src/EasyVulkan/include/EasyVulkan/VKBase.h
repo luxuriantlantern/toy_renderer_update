@@ -2307,19 +2307,19 @@ namespace vulkan {
     };
     class attachment {
 	protected:
-		imageView imageView;
-		imageMemory imageMemory;
+		imageView mimageView;
+		imageMemory mimageMemory;
 		//--------------------
 		attachment() = default;
 	public:
 		//Getter
-		VkImageView ImageView() const { return imageView; }
-		VkImage Image() const { return imageMemory.Image(); }
-		const VkImageView* AddressOfImageView() const { return imageView.Address(); }
-		const VkImage* AddressOfImage() const { return imageMemory.AddressOfImage(); }
+		VkImageView ImageView() const { return mimageView; }
+		VkImage Image() const { return mimageMemory.Image(); }
+		const VkImageView* AddressOfImageView() const { return mimageView.Address(); }
+		const VkImage* AddressOfImage() const { return mimageMemory.AddressOfImage(); }
 		//Const Function
 		VkDescriptorImageInfo DescriptorImageInfo(VkSampler sampler) const {
-			return { sampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+			return { sampler, mimageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 		}
 	};
 
@@ -2340,11 +2340,11 @@ namespace vulkan {
 				.samples = sampleCount,
 				.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | otherUsages
 			};
-			imageMemory.Create(
+			mimageMemory.Create(
 				imageCreateInfo,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | bool(otherUsages & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) * VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
-			imageView.Create(
-				imageMemory.Image(),
+			mimageView.Create(
+				mimageMemory.Image(),
 				layerCount > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
 				format,
 				{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layerCount });
@@ -2371,7 +2371,7 @@ namespace vulkan {
 				.samples = sampleCount,
 				.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | otherUsages
 			};
-			imageMemory.Create(
+			mimageMemory.Create(
 				imageCreateInfo,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | bool(otherUsages & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) * VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
 			VkImageAspectFlags aspectMask = (!stencilOnly) * VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -2379,8 +2379,8 @@ namespace vulkan {
 				aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 			else if (format == VK_FORMAT_S8_UINT)
 				aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-			imageView.Create(
-				imageMemory.Image(),
+			mimageView.Create(
+				mimageMemory.Image(),
 				layerCount > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
 				format,
 				{ aspectMask, 0, 1, 0, layerCount });

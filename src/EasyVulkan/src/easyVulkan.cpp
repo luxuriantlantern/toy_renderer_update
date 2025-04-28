@@ -69,7 +69,7 @@ namespace easyVulkan{
         graphicsBase::Base().AddCallback_DestroySwapchain(DestroyFramebuffers);
         return rpwf;
     }
-    const renderPassWithFramebuffers& CreateRpwf_ScreenWithDS(VkFormat depthStencilFormat) {
+    renderPassWithFramebuffers& CreateRpwf_ScreenWithDS(VkFormat depthStencilFormat) {
 		static renderPassWithFramebuffers rpwf;
 		static VkFormat _depthStencilFormat = depthStencilFormat;
 

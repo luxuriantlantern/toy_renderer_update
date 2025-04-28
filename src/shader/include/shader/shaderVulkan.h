@@ -35,7 +35,7 @@ public:
     void init() override;
 
     const auto& RenderPassAndFramebuffers() {
-        static const auto& rpwf = easyVulkan::CreateRpwf_Screen();
+        static const auto& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
         return rpwf;
     }
 
@@ -68,7 +68,7 @@ public:
     commandBuffer& getCommandBuffer() override { return mcommandBuffer; }
     fence& getFence() override { return mfence; }
     semaphore& getSemaphoreRenderingIsOver() override { return msemaphore_renderingIsOver; }
-    VkClearValue& getClearValue() override { return mclearColor; }
+    VkClearValue* getClearValue() override { return mclearValue; }
     descriptorSet& getDescriptorSet() override { return mdescriptorSet_triangle; }
     pipelineLayout& getPipelineLayout() override { return pipelineLayout_triangle; }
     pipeline& getPipeline() override { return pipeline_triangle; }
@@ -91,7 +91,10 @@ private:
             nullptr,
             nullptr
     });
-    VkClearValue mclearColor = VkClearValue{ .color = { 0.f, 0.f, 0.f, 1.f } };
+    VkClearValue mclearValue[2] = {
+            { .color = { 0.f, 0.f, 0.f, 1.f } },
+            { .depthStencil = { 1.f, 0 } }
+    };
     void initForUniform();
 
     fence mfence;

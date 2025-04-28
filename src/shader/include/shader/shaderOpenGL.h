@@ -62,7 +62,7 @@ public:
     semaphore& getSemaphoreRenderingIsOver() override {
         throw std::logic_error("OpenGL backend does not support getSemaphoreRenderingIsOver");
     }
-    VkClearValue & getClearValue() override {
+    VkClearValue* getClearValue() override {
         throw std::logic_error("OpenGL backend does not support getClearValue");
     }
     descriptorSet& getDescriptorSet() override {

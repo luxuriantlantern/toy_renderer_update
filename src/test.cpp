@@ -1,5 +1,5 @@
 #include "EasyVulkan/GlfwGeneral.hpp"
-#include "EasyVulkan/easyvulkan.h"
+#include "EasyVulkan/easyVulkan.h"
 using namespace vulkan;
 
 struct vertex {
@@ -68,8 +68,12 @@ inline glm::mat4 FlipVertical(const glm::mat4& projection) {
 }
 
 int main() {
-	if (!InitializeWindow({ 1280, 720 }))
-		return -1;
+
+    const int WIDTH = 1920, HEIGHT = 1080;
+    if (!InitializeWindow({WIDTH, HEIGHT}))
+        return -1;
+    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+    VkExtent2D prevWindowSize = windowSize;
 
 	const auto& [renderPass, framebuffers] = RenderPassAndFramebuffers();
 	CreateLayout();
@@ -144,6 +148,22 @@ int main() {
 	while (!glfwWindowShouldClose(pWindow)) {
 		while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
 			glfwWaitEvents();
+
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(pWindow, &width, &height);
+
+        if (width > 0 && height > 0 &&
+            (width != prevWindowSize.width || height != prevWindowSize.height)) {
+            graphicsBase::Base().WaitIdle();
+            windowSize.width = width;
+            windowSize.height = height;
+            if (graphicsBase::Base().RecreateSwapchain()) {
+                std::cerr << "Failed to recreate swapchain\n";
+                break;
+            }
+            prevWindowSize = windowSize;
+            continue;
+        }
 
 		graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
 		auto i = graphicsBase::Base().CurrentImageIndex();

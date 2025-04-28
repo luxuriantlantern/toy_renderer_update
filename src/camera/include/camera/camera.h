@@ -76,7 +76,7 @@ protected:
     glm::mat4 mViewMatrix{1.0f};
     glm::mat4 mProjectionMatrix{1.0f};
 
-    glm::vec3 mPosition{0.0f, 0.0f, 2.0f};
+    glm::vec3 mPosition{0.0f, 0.0f, 0.0f};
     glm::vec3 mFront{0.0f, 0.0f, -1.0f};
     glm::vec3 mUp{0.0f, 1.0f, 0.0f};
     glm::vec3 mRight{1.0f, 0.0f, 0.0f};

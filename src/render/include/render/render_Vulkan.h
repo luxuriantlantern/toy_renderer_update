@@ -34,13 +34,14 @@ private:
     void loadTexture(const std::string& path, GLuint& textureID);
     struct VulkanModelResources {
         std::vector<vertexBuffer> vertexBuffers;
-//        std::vector<VkDescriptorSet> descriptorSets;
         std::vector<uint32_t> vertexCounts;
+        std::vector<vertexBuffer> vertexBuffers_Material;
+//        std::vector<VkDescriptorSet> descriptorSets;
 //        std::vector<VkImage> textures;
 //        std::vector<VkImageView> textureViews;
 //        std::vector<VkSampler> samplers;
     };
-    easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_Screen();
+    easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;
 };
 

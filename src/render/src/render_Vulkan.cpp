@@ -56,22 +56,17 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
                 buffer.push_back({vertices[j], normals[j], texCoords[j]});
             }
 
-            resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::material));
-            resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::material));
-            resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
-
+            resources.vertexBuffers_Material.emplace_back(buffer.size() * sizeof(shaderVulkan::material));
+            resources.vertexBuffers_Material.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::material));
         }
-        else
-        {
-            std::vector<shaderVulkan::vertex> buffer;
-            for (size_t j = 0; j < vertices.size(); ++j) {
-                buffer.push_back({vertices[j], normals[j]});
-            }
-
-            resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
-            resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
-            resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
+        std::vector<shaderVulkan::vertex> buffer;
+        for (size_t j = 0; j < vertices.size(); ++j) {
+            buffer.push_back({vertices[j], normals[j]});
         }
+
+        resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
+        resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
+        resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
 //  TODO: add 2d texture
     }
 
@@ -101,39 +96,46 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
 {
     auto shader = mCurrentShader.second;
     auto models = scene->getModels();
-    size_t idx = 0;
-    for (const auto& model : models)
-    {
+
+    graphicsBase::Base().SwapImage(shader->getSemaphoreImageIsAvailable());
+    auto i = graphicsBase::Base().CurrentImageIndex();
+
+    commandBuffer &CommandBuffer = shader->getCommandBuffer();
+    fence &Fence = shader->getFence();
+    semaphore &semaphore_imageIsAvailable = shader->getSemaphoreImageIsAvailable();
+    semaphore &semaphore_renderingIsOver = shader->getSemaphoreRenderingIsOver();
+
+    CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VkClearValue clearValues[2];
+    std::memcpy(clearValues, shader->getClearValue(), sizeof(clearValues));
+    rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], {{}, windowSize}, clearValues);
+
+    for (const auto& model : models) {
         shaderVulkan::uniformBufferObject ubo{};
         ubo.model = model->getModelMatrix();
         ubo.view = viewMatrix;
         ubo.proj = projectionMatrix;
+        for(int j = 0; j < 4; ++j) ubo.proj[j][1] *= -1;
 
         shader->getUniformBuffer().TransferData(&ubo, sizeof(ubo));
 
-        graphicsBase::Base().SwapImage(shader->getSemaphoreImageIsAvailable());
-        auto i = graphicsBase::Base().CurrentImageIndex();
-
-        commandBuffer& CommandBuffer = shader->getCommandBuffer();
-
-        fence& Fence = shader->getFence();
-        semaphore& semaphore_imageIsAvailable = shader->getSemaphoreImageIsAvailable();
-        semaphore& semaphore_renderingIsOver = shader->getSemaphoreRenderingIsOver();
-
-        CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], { {}, windowSize }, shader->getClearValue());
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
-        vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
-        vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0, nullptr);
-        vkCmdDraw(CommandBuffer, mModelResources[model].vertexCounts[idx], 1, 0, 0);
-        rpwf.pass.CmdEnd(CommandBuffer);
-        CommandBuffer.End();
-
-        graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, Fence);
-        graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
-        Fence.WaitAndReset();
-        idx ++;
+        for(size_t idx = 0; idx < mModelResources[model].vertexBuffers.size(); ++idx) {
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
+            vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
+            vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0,
+                                    nullptr);
+            vkCmdDraw(CommandBuffer, mModelResources[model].vertexCounts[idx], 1, 0, 0);
+        }
     }
+
+    rpwf.pass.CmdEnd(CommandBuffer);
+    CommandBuffer.End();
+
+    graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable,
+                                                      semaphore_renderingIsOver, Fence);
+    graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
+    Fence.WaitAndReset();
 }

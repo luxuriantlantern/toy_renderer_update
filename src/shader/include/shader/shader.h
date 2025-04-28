@@ -45,7 +45,7 @@ public:
     virtual commandBuffer& getCommandBuffer() = 0;
     virtual fence& getFence() = 0;
     virtual semaphore& getSemaphoreRenderingIsOver() = 0;
-    virtual VkClearValue& getClearValue() = 0;
+    virtual VkClearValue* getClearValue() = 0;
     virtual descriptorSet& getDescriptorSet() = 0;
     virtual pipelineLayout& getPipelineLayout() = 0;
     virtual pipeline& getPipeline() = 0;

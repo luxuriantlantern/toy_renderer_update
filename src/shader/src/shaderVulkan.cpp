@@ -118,7 +118,16 @@ void shaderVulkan::init()
         pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
         pipelineCiPack.scissors.emplace_back(VkOffset2D{}, windowSize);
+
+//        pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_BACK_BIT;
+//        pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
         pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        pipelineCiPack.depthStencilStateCi.depthTestEnable = VK_TRUE;
+        pipelineCiPack.depthStencilStateCi.depthWriteEnable = VK_TRUE;
+        pipelineCiPack.depthStencilStateCi.depthCompareOp = VK_COMPARE_OP_LESS;
+
         pipelineCiPack.colorBlendAttachmentStates.push_back({ .colorWriteMask = 0b1111 });
 
         pipelineCiPack.UpdateAllArrays();
