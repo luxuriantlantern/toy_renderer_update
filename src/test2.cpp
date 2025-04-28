@@ -98,7 +98,6 @@ int main() {
     auto render = std::make_shared<Render_Vulkan>();
     render->init();
     render->setup(scene);
-    float printTimer = 0.0f;
     while(!glfwWindowShouldClose(pWindow)) {
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
             glfwWaitEvents();
@@ -122,7 +121,7 @@ int main() {
         processInput(pWindow); // 调用输入处理
         gCamera->update(width, height);
         render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
-//        glfwSwapBuffers(pWindow);
+        glfwSwapBuffers(pWindow);
         glfwPollEvents();
     }
 }

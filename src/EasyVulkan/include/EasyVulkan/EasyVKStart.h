@@ -57,5 +57,24 @@ public:
     arrayRef& operator=(const arrayRef&) = delete;
 };
 #define ExecuteOnce(...) { static bool executed = false; if (executed) return __VA_ARGS__; executed = true; }
-
+template<std::signed_integral T>
+constexpr int GetSign(T num) {
+    return (num > 0) - (num < 0);
+}
+template<std::signed_integral T>
+constexpr bool SameSign(T num0, T num1) {
+    return num0 == num1 || !(num0 >= 0 && num1 <= 0 || num0 <= 0 && num1 >= 0);
+}
+template<std::signed_integral T>//0 is treated as positive
+constexpr bool SameSign_Weak(T num0, T num1) {
+    return (num0 ^ num1) >= 0;
+}
+template<std::signed_integral T>
+constexpr bool Between_Open(T min, T num, T max) {
+    return ((min - num) & (num - max)) < 0;
+}
+template<std::signed_integral T>
+constexpr bool Between_Closed(T min, T num, T max) {
+    return ((num - min) | (max - num)) >= 0;
+}
 #endif

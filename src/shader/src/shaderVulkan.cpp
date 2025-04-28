@@ -76,11 +76,33 @@ void shaderVulkan::init()
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
     };
 
+    VkDescriptorSetLayoutBinding bindings[3] = {
+            {
+                .binding = 0,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            },
+            {
+                .binding = 2,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            }
+    };
+
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = 1,
-        .pBindings = &binding
     };
+    if(mShaderType == SHADER_TYPE::Blinn_Phong)descriptorSetLayoutCreateInfo_triangle.bindingCount = 1, descriptorSetLayoutCreateInfo_triangle.pBindings = &binding;
+    else if(mShaderType == SHADER_TYPE::MATERIAL)descriptorSetLayoutCreateInfo_triangle.bindingCount = 3, descriptorSetLayoutCreateInfo_triangle.pBindings = bindings;
+
     descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {
@@ -119,9 +141,6 @@ void shaderVulkan::init()
         pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
         pipelineCiPack.scissors.emplace_back(VkOffset2D{}, windowSize);
 
-//        pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_BACK_BIT;
-//        pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
         pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
         pipelineCiPack.depthStencilStateCi.depthTestEnable = VK_TRUE;
@@ -149,21 +168,38 @@ void shaderVulkan::init()
 
 void shaderVulkan::initForUniform()
 {
-    mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-    mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
-            .buffer = muniformBuffer,
-            .offset = 0,
-            .range = sizeof(uniformBufferObject)
-    });
-    mdescriptorWrite = std::make_unique<VkWriteDescriptorSet>(VkWriteDescriptorSet{
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = mdescriptorSet_triangle,
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .pBufferInfo = mbufferInfo.get()
-    });
+    if(mShaderType == SHADER_TYPE::Blinn_Phong) {
+        mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
+        mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
+                .buffer = muniformBuffer,
+                .offset = 0,
+                .range = sizeof(uniformBufferObject)
+        });
+        mdescriptorWrite = std::make_unique<VkWriteDescriptorSet>(VkWriteDescriptorSet{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = mdescriptorSet_triangle,
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .pBufferInfo = mbufferInfo.get()
+        });
+    }
+    if(mShaderType == SHADER_TYPE::MATERIAL) {
+        mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
+        mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
+                .buffer = muniformBuffer,
+                .offset = 0,
+                .range = sizeof(uniformBufferObject)
+        });
+        VkDescriptorImageInfo emptyImageInfo = {
+                .sampler = VK_NULL_HANDLE,      // 无采样器
+                .imageView = VK_NULL_HANDLE,    // 无纹理视图
+                .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+        VkSamplerCreateInfo samplerCreateInfo = texture::SamplerCreateInfo();
+        sampler msampler()
+    }
 
     use();
 }

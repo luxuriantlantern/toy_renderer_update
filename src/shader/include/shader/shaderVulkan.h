@@ -56,6 +56,13 @@ public:
         glm::mat4 proj;
     };
 
+    struct unoformBufferObject_Material {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+
+    };
+
     void cleanup() override;
     void setBool(const std::string &name, bool value) const override;
     void setInt(const std::string &name, int value) const override;
