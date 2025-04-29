@@ -28,6 +28,7 @@ class Shader {
 public:
     virtual void cleanup() = 0;
     virtual void init() = 0;
+    SHADER_TYPE getShaderType() const { return mShaderType; }
     SHADER_BACKEND_TYPE getBackendType() const { return mBackendType; }
     virtual void use() = 0;
     virtual void setShaderType(SHADER_TYPE type) = 0;
@@ -49,6 +50,7 @@ public:
     virtual descriptorSet& getDescriptorSet() = 0;
     virtual pipelineLayout& getPipelineLayout() = 0;
     virtual pipeline& getPipeline() = 0;
+    virtual uniformBuffer& getHasTextureBuffer() = 0;
 
 
 protected:

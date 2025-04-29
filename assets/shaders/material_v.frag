@@ -11,11 +11,12 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(binding = 1) uniform sampler2D texture_diffuse;
 
-layout(binding = 2) uniform int hasTexture;
+layout(binding = 2) uniform HasTexture {
+    int hasTexture;
+} hasTexture;
 
 void main() {
-
-    if (hasTexture) {
+    if (hasTexture.hasTexture > 0) {
         FragColor = texture(texture_diffuse, TexCoords);
     } else {    // No Texture, the same as solid
         vec3 lightDir = normalize(vec3(ubo.view * vec4(-0.2, -1.0, -0.3, 0.0)));

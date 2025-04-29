@@ -91,7 +91,7 @@ void shaderVulkan::init()
             },
             {
                 .binding = 2,
-                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                 .descriptorCount = 1,
                 .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             }
@@ -169,43 +169,67 @@ void shaderVulkan::init()
 void shaderVulkan::initForUniform()
 {
     if(mShaderType == SHADER_TYPE::Blinn_Phong) {
-        mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-        mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
-                .buffer = muniformBuffer,
+        muniformBuffer.emplace((sizeof(uniformBufferObject)));
+        mdescriptorPool.emplace(1, VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 });
+        mdescriptorPool->AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
+        VkDescriptorBufferInfo mbufferInfo = {
+                .buffer = *muniformBuffer,
                 .offset = 0,
                 .range = sizeof(uniformBufferObject)
-        });
-        mdescriptorWrite = std::make_unique<VkWriteDescriptorSet>(VkWriteDescriptorSet{
+        };
+        VkWriteDescriptorSet descriptorWrite = {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = mdescriptorSet_triangle,
                 .dstBinding = 0,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .pBufferInfo = mbufferInfo.get()
-        });
+                .pBufferInfo = &mbufferInfo
+        };
+        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &descriptorWrite, 0, nullptr);
     }
     if(mShaderType == SHADER_TYPE::MATERIAL) {
-        mdescriptorPool.AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-        mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{
-                .buffer = muniformBuffer,
+        muniformBuffer.emplace((sizeof(uniformBufferObject)));
+        mHasTextureBuffer.emplace((sizeof(int)));
+        VkDescriptorPoolSize poolSizes[] = {
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+        };
+        mdescriptorPool.emplace(1, poolSizes);
+        mdescriptorPool->AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
+        VkDescriptorBufferInfo unifromBufferInfo = {
+                .buffer = *muniformBuffer,
                 .offset = 0,
                 .range = sizeof(uniformBufferObject)
-        });
-        VkDescriptorImageInfo emptyImageInfo = {
-                .sampler = VK_NULL_HANDLE,      // 无采样器
-                .imageView = VK_NULL_HANDLE,    // 无纹理视图
-                .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
-        VkSamplerCreateInfo samplerCreateInfo = texture::SamplerCreateInfo();
-        sampler msampler()
+        VkDescriptorBufferInfo intInfo = {
+                .buffer = *mHasTextureBuffer,
+                .offset = 0,
+                .range = sizeof(int)
+        };
+        VkWriteDescriptorSet writes[2] = {
+                {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = mdescriptorSet_triangle,
+                        .dstBinding = 0,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .pBufferInfo = &unifromBufferInfo
+                },
+                {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = mdescriptorSet_triangle,
+                        .dstBinding = 2,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .pBufferInfo = &intInfo
+                }
+        };
+
+        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
     }
-
-    use();
-}
-
-void shaderVulkan::use() {
-    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, mdescriptorWrite.get(), 0, nullptr);
 }
 
 void shaderVulkan::setBool(const std::string &name, bool value) const {
@@ -245,9 +269,9 @@ void shaderVulkan::cleanup() {
     pipelineLayout_triangle.~pipelineLayout();
     descriptorSetLayout_triangle.~descriptorSetLayout();
 
-    mdescriptorPool.~descriptorPool();
+    mdescriptorPool->~descriptorPool();
 
-    muniformBuffer.~uniformBuffer();
+    muniformBuffer->~uniformBuffer();
 
     vert.~shaderModule();
     frag.~shaderModule();

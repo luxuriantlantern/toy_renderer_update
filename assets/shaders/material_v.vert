@@ -14,7 +14,7 @@ layout(binding = 0) uniform UniformBufferObject {
 
 void main() {
     TexCoords = aTexCoords;
-    FragPos = vec3(model * vec4(aPos, 1.0));
+    FragPos = vec3(ubo.model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(ubo.model))) * aNormal;
     gl_Position = ubo.projection * ubo.view * vec4(FragPos, 1.0);
 }

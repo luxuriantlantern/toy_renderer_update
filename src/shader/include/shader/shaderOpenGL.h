@@ -74,6 +74,9 @@ public:
     pipeline& getPipeline() override {
         throw std::logic_error("OpenGL backend does not support getPipeline");
     }
+    uniformBuffer& getHasTextureBuffer() override {
+        throw std::logic_error("OpenGL backend does not support getHasTextureBuffer");
+    }
 
 private:
 

@@ -14,12 +14,17 @@ void Render_Vulkan::init() {
             "./assets/shaders/Blinn-Phong_v.vert",
             "./assets/shaders/Blinn-Phong_v.frag"
     );
+    mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderVulkan>(
+            "./assets/shaders/material_v.vert",
+            "./assets/shaders/material_v.frag"
+    );
     mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
+    mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
     for(auto & shader : mShaders)
     {
         shader.second->init();
     }
-    mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
+    mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
 }
 
 void Render_Vulkan::cleanup() {
@@ -122,8 +127,33 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
 
         for(size_t idx = 0; idx < mModelResources[model].vertexBuffers.size(); ++idx) {
             VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
+            if(shader->getShaderType() == SHADER_TYPE::Blinn_Phong)
+                vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
+            else if(shader->getShaderType() == SHADER_TYPE::MATERIAL)
+                vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers_Material[idx].Address(), &offset);
             vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
+            if(shader->getShaderType() == SHADER_TYPE::MATERIAL)
+            {
+                uint32_t hasTexture = model->getTexCoords(idx).size();
+                shader->getHasTextureBuffer().TransferData(&hasTexture, sizeof(uint32_t));
+                if(hasTexture)
+                {
+                    texture2d texture(model->getTexturePath(idx).c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+                    VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
+                    sampler msampler(samplerInfo);
+                    VkDescriptorImageInfo imageInfo = texture.DescriptorImageInfo(msampler);
+
+                    VkWriteDescriptorSet write = {};
+                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    write.dstSet = shader->getDescriptorSet();
+                    write.dstBinding = 1;
+                    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    write.descriptorCount = 1;
+                    write.pImageInfo = &imageInfo;
+
+                    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &write, 0, nullptr);
+                }
+            }
             vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0,
                                     nullptr);

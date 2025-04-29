@@ -31,7 +31,7 @@ public:
     std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLanguage stage);
     std::string readFile(const std::string& filepath);
     void LoadShaders(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
-    void use() override;
+    void use() override  {return;}
     void init() override;
 
     const auto& RenderPassAndFramebuffers() {
@@ -71,7 +71,8 @@ public:
     void setMat4(const std::string &name, const glm::mat4 &mat) const override;
 
     semaphore& getSemaphoreImageIsAvailable() override { return msemaphore_imageIsAvailable; }
-    uniformBuffer& getUniformBuffer() override { return muniformBuffer; }
+    uniformBuffer& getUniformBuffer() override { return *muniformBuffer; }
+    uniformBuffer& getHasTextureBuffer() override { return *mHasTextureBuffer; }
     commandBuffer& getCommandBuffer() override { return mcommandBuffer; }
     fence& getFence() override { return mfence; }
     semaphore& getSemaphoreRenderingIsOver() override { return msemaphore_renderingIsOver; }
@@ -87,17 +88,14 @@ private:
     pipelineLayout pipelineLayout_triangle;
     pipeline pipeline_triangle;
 
-    uniformBuffer muniformBuffer = std::move(uniformBuffer(sizeof(uniformBufferObject)));
-    descriptorPool mdescriptorPool = std::move(descriptorPool(1, VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }));
-    descriptorSet mdescriptorSet_triangle;
-    std::unique_ptr<VkDescriptorBufferInfo> mbufferInfo = std::make_unique<VkDescriptorBufferInfo>(VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, 0});
+//    uniformBuffer muniformBuffer = std::move(uniformBuffer(sizeof(uniformBufferObject)));
+//    descriptorPool mdescriptorPool = std::move(descriptorPool(1, VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }));
+    std::optional<uniformBuffer> muniformBuffer;
+    std::optional<uniformBuffer> mHasTextureBuffer;
+    std::optional<descriptorPool> mdescriptorPool;
 
-    std::unique_ptr<VkWriteDescriptorSet> mdescriptorWrite = std::make_unique<VkWriteDescriptorSet>(VkWriteDescriptorSet{
-            VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, VK_NULL_HANDLE, 0, 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            nullptr,
-            nullptr,
-            nullptr
-    });
+    descriptorSet mdescriptorSet_triangle;
+
     VkClearValue mclearValue[2] = {
             { .color = { 0.f, 0.f, 0.f, 1.f } },
             { .depthStencil = { 1.f, 0 } }
