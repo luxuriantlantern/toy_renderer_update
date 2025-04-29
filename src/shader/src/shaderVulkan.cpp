@@ -207,7 +207,11 @@ void shaderVulkan::initForUniform()
                 .offset = 0,
                 .range = sizeof(int)
         };
-        VkWriteDescriptorSet writes[2] = {
+        texture2d dummyTexture("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+        VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
+        sampler msampler(samplerInfo);
+        VkDescriptorImageInfo imageInfo = dummyTexture.DescriptorImageInfo(msampler);
+        VkWriteDescriptorSet writes[3] = {
                 {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = mdescriptorSet_triangle,
@@ -220,6 +224,15 @@ void shaderVulkan::initForUniform()
                 {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = mdescriptorSet_triangle,
+                        .dstBinding = 1,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .pImageInfo = &imageInfo
+                },
+                {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = mdescriptorSet_triangle,
                         .dstBinding = 2,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
@@ -228,7 +241,7 @@ void shaderVulkan::initForUniform()
                 }
         };
 
-        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
+        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 3, writes, 0, nullptr);
     }
 }
 

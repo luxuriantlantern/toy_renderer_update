@@ -1805,13 +1805,13 @@ namespace vulkan {
     };
 
     class graphicsBasePlus {
-        /*新增*/VkFormatProperties formatProperties[std::size(formatInfos_v1_0)] = {};
+        VkFormatProperties formatProperties[std::size(formatInfos_v1_0)] = {};
         commandPool commandPool_graphics;
         commandPool commandPool_presentation;
         commandPool commandPool_compute;
-        commandBuffer commandBuffer_transfer;//从commandPool_graphics分配
+        commandBuffer commandBuffer_transfer;
         commandBuffer commandBuffer_presentation;
-        //静态变量
+        //Static
         static graphicsBasePlus singleton;
         //--------------------
         graphicsBasePlus() {
@@ -1826,10 +1826,8 @@ namespace vulkan {
                     graphicsBase::Base().SwapchainCreateInfo().imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)
                     singleton.commandPool_presentation.Create(graphicsBase::Base().QueueFamilyIndex_Presentation(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
                             singleton.commandPool_presentation.AllocateBuffers(singleton.commandBuffer_presentation);
-                //新增------------------------------------
                 for (size_t i = 0; i < std::size(singleton.formatProperties); i++)
                     vkGetPhysicalDeviceFormatProperties(graphicsBase::Base().PhysicalDevice(), VkFormat(i), &singleton.formatProperties[i]);
-                //----------------------------------------
             };
             auto CleanUp = [] {
                 singleton.commandPool_graphics.~commandPool();
@@ -1844,7 +1842,7 @@ namespace vulkan {
         ~graphicsBasePlus() = default;
     public:
         //Getter
-        /*新增*/const VkFormatProperties& FormatProperties(VkFormat format) const {
+        const VkFormatProperties& FormatProperties(VkFormat format) const {
 #ifndef NDEBUG
             if (uint32_t(format) >= std::size(formatInfos_v1_0))
                 outStream << std::format("[ FormatProperties ] ERROR\nThis function only supports definite formats provided by VK_VERSION_1_0.\n"),
@@ -1863,6 +1861,17 @@ namespace vulkan {
                     .pCommandBuffers = &commandBuffer
             };
             VkResult result = graphicsBase::Base().SubmitCommandBuffer_Graphics(submitInfo, fence);
+            if (!result)
+                fence.Wait();
+            return result;
+        }
+        result_t ExecuteCommandBuffer_Compute(VkCommandBuffer commandBuffer) const {
+            fence fence;
+            VkSubmitInfo submitInfo = {
+                    .commandBufferCount = 1,
+                    .pCommandBuffers = &commandBuffer
+            };
+            VkResult result = graphicsBase::Base().SubmitCommandBuffer_Compute(submitInfo, fence);
             if (!result)
                 fence.Wait();
             return result;
@@ -1973,7 +1982,7 @@ namespace vulkan {
         VkImage AliasedImage2d(VkFormat format, VkExtent2D extent) {
             if (!(FormatProperties(format).linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT))
                 return VK_NULL_HANDLE;
-            VkDeviceSize imageDataSize = VkDeviceSize(FormatInfo(format).sizePerPixel) * extent.width * extent. height;
+            VkDeviceSize imageDataSize = VkDeviceSize(FormatInfo(format).sizePerPixel) * extent.width * extent.height;
             if (imageDataSize > AllocationSize())
                 return VK_NULL_HANDLE;
             VkImageFormatProperties imageFormatProperties = {};
@@ -2000,7 +2009,7 @@ namespace vulkan {
             VkSubresourceLayout subresourceLayout = {};
             vkGetImageSubresourceLayout(graphicsBase::Base().Device(), aliasedImage, &subResource, &subresourceLayout);
             if (subresourceLayout.size != imageDataSize)
-                return VK_NULL_HANDLE;
+                return VK_NULL_HANDLE;//No padding bytes
             aliasedImage.BindMemory(mbufferMemory.Memory());
             return aliasedImage;
         }
