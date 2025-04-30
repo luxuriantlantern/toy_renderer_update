@@ -5,7 +5,7 @@
 #ifndef LEARNVULKAN_EASYVULKAN_H
 #define LEARNVULKAN_EASYVULKAN_H
 
-#include "VKBase.h"
+#include "VKBase+.h"
 using namespace vulkan;
 extern VkExtent2D windowSize;
 
