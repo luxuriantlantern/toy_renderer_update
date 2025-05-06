@@ -31,7 +31,7 @@ public:
     SHADER_TYPE getShaderType() const { return mShaderType; }
     SHADER_BACKEND_TYPE getBackendType() const { return mBackendType; }
     virtual void use() = 0;
-    virtual void setShaderType(SHADER_TYPE type) = 0;
+    void setShaderType(SHADER_TYPE type) { mShaderType = type; }
 
     virtual void setBool(const std::string &name, bool value) const = 0;
     virtual void setInt(const std::string &name, int value) const = 0;

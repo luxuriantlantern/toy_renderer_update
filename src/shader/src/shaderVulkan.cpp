@@ -77,24 +77,9 @@ void shaderVulkan::init()
     };
 
     VkDescriptorSetLayoutBinding bindings[3] = {
-            {
-                .binding = 0,
-                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            },
-            {
-                .binding = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            },
-            {
-                .binding = 2,
-                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            }
+            { .binding = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },
+            { .binding = 1, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT },
+            { .binding = 2, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT }
     };
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {
@@ -207,11 +192,11 @@ void shaderVulkan::initForUniform()
                 .offset = 0,
                 .range = sizeof(int)
         };
-        texture2d dummyTexture("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+        dummyTexture.emplace("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
         VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-        sampler msampler(samplerInfo);
-        VkDescriptorImageInfo imageInfo = dummyTexture.DescriptorImageInfo(msampler);
-        VkWriteDescriptorSet writes[3] = {
+        msampler.emplace(samplerInfo);
+        VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);
+        VkWriteDescriptorSet writes[] = {
                 {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = mdescriptorSet_triangle,
@@ -227,21 +212,13 @@ void shaderVulkan::initForUniform()
                         .dstBinding = 1,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .pImageInfo = &imageInfo
-                },
-                {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = mdescriptorSet_triangle,
-                        .dstBinding = 2,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
                         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                         .pBufferInfo = &intInfo
                 }
         };
 
-        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 3, writes, 0, nullptr);
+        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
+        mdescriptorSet_triangle.Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
     }
 }
 

@@ -31,9 +31,6 @@ public:
         if(mBackendType != OPENGL) return;
         glUseProgram(mProgram);
     }
-    void setShaderType(SHADER_TYPE type) override{
-        mShaderType = type;
-    }
     GLuint compileShaderProgram(const std::string &path, GLenum type);
     void setBool(const std::string &name, bool value) const override;
     void setInt(const std::string &name, int value) const override;

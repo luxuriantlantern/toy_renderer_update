@@ -27,7 +27,6 @@ public:
         mBackendType = VULKAN;
         mProgram = 0;
     }
-    void setShaderType(SHADER_TYPE type){mShaderType = type;}
     std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLanguage stage);
     std::string readFile(const std::string& filepath);
     void LoadShaders(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
@@ -101,6 +100,8 @@ private:
             { .depthStencil = { 1.f, 0 } }
     };
     void initForUniform();
+    std::optional<texture2d> dummyTexture;
+    std::optional<sampler> msampler;
 
     fence mfence;
     semaphore msemaphore_imageIsAvailable;

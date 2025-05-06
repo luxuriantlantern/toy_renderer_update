@@ -9,11 +9,13 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 model, view, projection;
 } ubo;
 
-layout(binding = 1) uniform sampler2D texture_diffuse;
 
-layout(binding = 2) uniform HasTexture {
+layout(binding = 1) uniform HasTexture {
     int hasTexture;
 } hasTexture;
+
+layout(binding = 2) uniform sampler2D texture_diffuse;
+
 
 void main() {
     if (hasTexture.hasTexture > 0) {
