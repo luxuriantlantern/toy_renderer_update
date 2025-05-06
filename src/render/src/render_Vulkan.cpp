@@ -14,17 +14,17 @@ void Render_Vulkan::init() {
             "./assets/shaders/Blinn-Phong_v.vert",
             "./assets/shaders/Blinn-Phong_v.frag"
     );
-//    mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderVulkan>(
-//            "./assets/shaders/material_v.vert",
-//            "./assets/shaders/material_v.frag"
-//    );
+    mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderVulkan>(
+            "./assets/shaders/material_v.vert",
+            "./assets/shaders/material_v.frag"
+    );
     mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
-//    mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
+    mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
     for(auto & shader : mShaders)
     {
         shader.second->init();
     }
-    mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
+    mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
 }
 
 void Render_Vulkan::cleanup() {
