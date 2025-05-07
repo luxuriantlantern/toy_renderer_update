@@ -51,6 +51,7 @@ public:
     virtual pipelineLayout& getPipelineLayout() = 0;
     virtual pipeline& getPipeline() = 0;
     virtual uniformBuffer& getHasTextureBuffer() = 0;
+    virtual descriptorSet allocateDescriptorSet() = 0;
 
 
 protected:

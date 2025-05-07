@@ -29,6 +29,7 @@ public:
     SHADER_TYPE getShaderType() const override {
         return mCurrentShader.first;
     }
+
 private:
     void cleanup() override;
     void loadTexture(const std::string& path, GLuint& textureID);
@@ -36,10 +37,9 @@ private:
         std::vector<vertexBuffer> vertexBuffers;
         std::vector<uint32_t> vertexCounts;
         std::vector<vertexBuffer> vertexBuffers_Material;
-//        std::vector<VkDescriptorSet> descriptorSets;
-//        std::vector<VkImage> textures;
-//        std::vector<VkImageView> textureViews;
-//        std::vector<VkSampler> samplers;
+        std::vector<descriptorSet> descriptorSets;
+        std::vector<texture2d> textures;
+        std::vector<sampler> samplers;
     };
     easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;

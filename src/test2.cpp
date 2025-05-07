@@ -124,4 +124,5 @@ int main() {
         glfwSwapBuffers(pWindow);
         glfwPollEvents();
     }
+    glfwTerminate();
 }

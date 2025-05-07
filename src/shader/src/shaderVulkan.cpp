@@ -192,10 +192,7 @@ void shaderVulkan::initForUniform()
                 .offset = 0,
                 .range = sizeof(int)
         };
-        dummyTexture.emplace("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
-        VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-        msampler.emplace(samplerInfo);
-        VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);
+
         VkWriteDescriptorSet writes[] = {
                 {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -216,8 +213,12 @@ void shaderVulkan::initForUniform()
                         .pBufferInfo = &intInfo
                 }
         };
-
         vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
+
+        dummyTexture.emplace("assets/SJTU_east_gate_MC/East_Gate_Voxel-RGB.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+        VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
+        msampler.emplace(samplerInfo);
+        VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);
         mdescriptorSet_triangle.Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
     }
 }
@@ -248,20 +249,44 @@ void shaderVulkan::setMat4(const std::string &name, const glm::mat4 &mat) const 
 }
 
 void shaderVulkan::cleanup() {
-    if(mBackendType != VULKAN) return;
+    if (mBackendType != VULKAN) return;
     graphicsBase::Base().WaitIdle();
 
+    // 释放 fence 和 semaphore
     mfence.~fence();
     msemaphore_imageIsAvailable.~semaphore();
     msemaphore_renderingIsOver.~semaphore();
 
+    // 释放 Vulkan pipeline 相关资源
     pipeline_triangle.~pipeline();
     pipelineLayout_triangle.~pipelineLayout();
     descriptorSetLayout_triangle.~descriptorSetLayout();
 
-    mdescriptorPool->~descriptorPool();
 
-    muniformBuffer->~uniformBuffer();
+    if (mdescriptorPool) {
+        mdescriptorPool->~descriptorPool();
+        mdescriptorPool.reset();
+    }
+
+    if (muniformBuffer) {
+        muniformBuffer->~uniformBuffer();
+        muniformBuffer.reset();
+    }
+
+    if (mHasTextureBuffer) {
+        mHasTextureBuffer->~uniformBuffer();
+        mHasTextureBuffer.reset();
+    }
+
+    if (dummyTexture) {
+        dummyTexture->~texture2d();
+        dummyTexture.reset();
+    }
+
+    if (msampler) {
+        msampler->~sampler();
+        msampler.reset();
+    }
 
     vert.~shaderModule();
     frag.~shaderModule();

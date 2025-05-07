@@ -108,6 +108,12 @@ private:
     semaphore msemaphore_renderingIsOver;
     commandBuffer mcommandBuffer;
     commandPool mcommandPool = commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+    descriptorSet allocateDescriptorSet() {
+        descriptorSet set;
+        mdescriptorPool->AllocateSets(set, descriptorSetLayout_triangle);
+        return set;
+    }
 };
 
 #endif //TOY_RENDERER_UPDATE_SHADERVULKAN_H

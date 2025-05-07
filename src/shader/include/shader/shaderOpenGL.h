@@ -74,6 +74,9 @@ public:
     uniformBuffer& getHasTextureBuffer() override {
         throw std::logic_error("OpenGL backend does not support getHasTextureBuffer");
     }
+    descriptorSet allocateDescriptorSet() override {
+        throw std::logic_error("OpenGL backend does not support allocateDescriptorSet");
+    }
 
 private:
 

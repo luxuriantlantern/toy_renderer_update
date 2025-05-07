@@ -27,6 +27,9 @@ public:
     virtual SHADER_TYPE getShaderType() const = 0;
     virtual void cleanup() = 0;
     virtual void init() = 0;
+    std::shared_ptr<Shader> getMaterialShader() {
+        return mShaders[SHADER_TYPE::MATERIAL];
+    }
 
 protected:
     std::unordered_map<SHADER_TYPE, std::shared_ptr<Shader>> mShaders;

@@ -1016,19 +1016,19 @@ namespace vulkan {
         static VkSamplerCreateInfo SamplerCreateInfo() {
             return {
                     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-                    .magFilter = VK_FILTER_LINEAR,
-                    .minFilter = VK_FILTER_LINEAR,
-                    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                    .magFilter = VK_FILTER_NEAREST,
+                    .minFilter = VK_FILTER_NEAREST,
+                    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
                     .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                     .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                     .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                     .mipLodBias = 0.f,
-                    .anisotropyEnable = VK_TRUE,
-                    .maxAnisotropy = graphicsBase::Base().PhysicalDeviceProperties().limits.maxSamplerAnisotropy,
+                    .anisotropyEnable = VK_FALSE, // 通常在不使用插值时禁用各向异性过滤
+                    .maxAnisotropy = 1.0f,      // 当 anisotropyEnable 为 VK_FALSE 时，此值被忽略，但设置为1.0f是常见的做法
                     .compareEnable = VK_FALSE,
                     .compareOp = VK_COMPARE_OP_ALWAYS,
                     .minLod = 0.f,
-                    .maxLod = VK_LOD_CLAMP_NONE,
+                    .maxLod = 0.f, // 如果不使用 mipmap，可以将 maxLod 设置为0
                     .borderColor = {},
                     .unnormalizedCoordinates = VK_FALSE
             };
