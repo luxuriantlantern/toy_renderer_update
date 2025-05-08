@@ -29,4 +29,13 @@ void main() {
         vec3 result = vec3(0.6, 0.6, 0.6) * (ambient + diffuse);
         FragColor = vec4(result, 1.0);
     }
+    float u = TexCoords.x;
+    float v = TexCoords.y;
+    if(u > 0.95f) u = 0.75f + (u - 0.95f) * 5.0f;
+    else if(u < 0.05f) u = u * 5.0f;
+    else u = 0.25f + (u - 0.25f) * 9.0f / 14.0f;
+    if(v > 0.95f) v = 0.75f + (v - 0.95f) * 5.0f;
+    else if(v < 0.05f) v = v * 5.0f;
+    else v = 0.25f + (v - 0.25f) * 9.0f / 14.0f;
+    FragColor = vec4(u, v, 0.0, 1.0);
 }

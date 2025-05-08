@@ -192,5 +192,7 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
     graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable,
                                                       semaphore_renderingIsOver, Fence);
     graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
+    glfwPollEvents();
+
     Fence.WaitAndReset();
 }

@@ -121,8 +121,6 @@ int main() {
         processInput(pWindow); // 调用输入处理
         gCamera->update(width, height);
         render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
-        glfwSwapBuffers(pWindow);
-        glfwPollEvents();
     }
     glfwTerminate();
 }
