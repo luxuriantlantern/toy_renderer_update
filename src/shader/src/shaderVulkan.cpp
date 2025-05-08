@@ -128,6 +128,9 @@ void shaderVulkan::init()
 
         pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+        // pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_BACK_BIT;
+        // pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
         pipelineCiPack.depthStencilStateCi.depthTestEnable = VK_TRUE;
         pipelineCiPack.depthStencilStateCi.depthWriteEnable = VK_TRUE;
         pipelineCiPack.depthStencilStateCi.depthCompareOp = VK_COMPARE_OP_LESS;

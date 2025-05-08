@@ -10,15 +10,15 @@
 #include <iostream>
 
 void Render_Vulkan::init() {
-    mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
-            "./assets/shaders/Blinn-Phong_v.vert",
-            "./assets/shaders/Blinn-Phong_v.frag"
-    );
+    // mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
+    //         "./assets/shaders/Blinn-Phong_v.vert",
+    //         "./assets/shaders/Blinn-Phong_v.frag"
+    // );
     mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderVulkan>(
             "./assets/shaders/material_v.vert",
             "./assets/shaders/material_v.frag"
     );
-    mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
+    // mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
     mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
 //    for(auto & shader : mShaders)
 //    {
@@ -47,7 +47,7 @@ Render_Vulkan::~Render_Vulkan() {
 }
 
 void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
-    VulkanModelResources resources;
+    VulkanModelResources &resources = mModelResources[model];
 
     size_t shapeCount = model->getShapeCount();
     for (size_t i = 0; i < shapeCount; ++i) {
@@ -79,15 +79,11 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
         {
             std::vector<shaderVulkan::material> buffer;
             for (size_t j = 0; j < vertices.size(); ++j) {
-                if(texCoords[j].x < 0.0012f && 1.0f - texCoords[j].y < 0.0012f)
-                {
-                    std::cout <<"error\n";
-                }
-                glm::vec2 tex = glm::vec2 {texCoords[j].x + 0.00001f, 1.0f - texCoords[j].y + 0.00001f};
+                glm::vec2 tex = glm::vec2 {texCoords[j].x, 1.0f - texCoords[j].y};
                 buffer.push_back({vertices[j], normals[j], tex});
             }
 
-            resources.vertexBuffers_Material.emplace_back(buffer.size() * sizeof(shaderVulkan::material));
+            resources.vertexBuffers_Material.emplace_back((buffer.size() + 5) * sizeof(shaderVulkan::material));
             resources.vertexBuffers_Material.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::material));
         }
         std::vector<shaderVulkan::vertex> buffer;
@@ -95,13 +91,12 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
             buffer.push_back({vertices[j], normals[j]});
         }
 
-        resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
-        resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
+        // resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
+        // resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
         resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
 //  TODO: add 2d texture
     }
 
-    mModelResources[model] = std::move(resources);
 }
 
 void Render_Vulkan::setup(const std::shared_ptr<Scene> &scene) {
