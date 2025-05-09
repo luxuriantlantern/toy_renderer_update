@@ -27,6 +27,7 @@ public:
     virtual SHADER_TYPE getShaderType() const = 0;
     virtual void cleanup() = 0;
     virtual void init() = 0;
+    virtual easyVulkan::renderPassWithFramebuffers& getRPWF() = 0;
     std::shared_ptr<Shader> getMaterialShader() {
         return mShaders[SHADER_TYPE::MATERIAL];
     }

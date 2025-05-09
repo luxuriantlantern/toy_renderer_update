@@ -275,6 +275,9 @@ namespace vulkan {
 		VkDevice Device() const {
 			return device;
 		}
+        VkQueue getGraphicsQueue() const {
+            return queue_graphics;
+        }
 		uint32_t QueueFamilyIndex_Graphics() const {
 			return queueFamilyIndex_graphics;
 		}

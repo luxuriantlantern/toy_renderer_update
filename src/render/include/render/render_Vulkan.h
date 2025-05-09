@@ -29,6 +29,9 @@ public:
     SHADER_TYPE getShaderType() const override {
         return mCurrentShader.first;
     }
+    easyVulkan::renderPassWithFramebuffers& getRPWF() override {
+        return rpwf;
+    }
 
 private:
     void cleanup() override;

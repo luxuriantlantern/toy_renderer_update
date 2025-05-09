@@ -8,6 +8,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <iostream>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_vulkan.h>
 
 void Render_Vulkan::init() {
     mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(

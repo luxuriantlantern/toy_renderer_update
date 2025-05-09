@@ -11,6 +11,7 @@
 void Viewer::initWindow(const std::string& title) {
     if(mRender->getType() == SHADER_BACKEND_TYPE::VULKAN)
     {
+        mWindow = pWindow;
         return;
     }
     if (!glfwInit()) {
@@ -56,12 +57,61 @@ void Viewer::initBackend() {
         ImGui_ImplOpenGL3_Init("#version 450");
     } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
         ImGui_ImplGlfw_InitForVulkan(mWindow, true);
+        ImGui_ImplVulkan_InitInfo initInfo = {};
+        initInfo.Instance = graphicsBase::Base().Instance();
+        initInfo.PhysicalDevice = graphicsBase::Base().PhysicalDevice();
+        initInfo.Device = graphicsBase::Base().Device();
+        initInfo.Queue = graphicsBase::Base().getGraphicsQueue();
+        VkDescriptorPool imguiPool = VK_NULL_HANDLE;
+        VkDescriptorPoolSize pool_sizes[] = {
+                { VK_DESCRIPTOR_TYPE_SAMPLER, 100 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 100 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 },
+                // 可根据需要添加更多类型
+        };
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 100 * (uint32_t)(sizeof(pool_sizes)/sizeof(pool_sizes[0]));
+        pool_info.poolSizeCount = (uint32_t)(sizeof(pool_sizes)/sizeof(pool_sizes[0]));
+        pool_info.pPoolSizes = pool_sizes;
+        if (vkCreateDescriptorPool(graphicsBase::Base().Device(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create ImGui descriptor pool!");
+        }
+
+// 传给 ImGui
+        initInfo.DescriptorPool = imguiPool;
+        initInfo.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
+        initInfo.ImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
+        initInfo.RenderPass = easyVulkan::CreateRpwf_ScreenWithDS().pass;
+        ImGui_ImplVulkan_Init(&initInfo);
     }
 }
 
 void Viewer::mainloop()
 {
+    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+    VkExtent2D prevWindowSize = windowSize;
     while (!glfwWindowShouldClose(mWindow)) {
+         while (glfwGetWindowAttrib(mWindow, GLFW_ICONIFIED))
+             glfwWaitEvents();
+
+//         int width = 0, height = 0;
+//         glfwGetFramebufferSize(mWindow, &width, &height);
+//
+//         if (width > 0 && height > 0 &&
+//             (width != prevWindowSize.width || height != prevWindowSize.height)) {
+//             graphicsBase::Base().WaitIdle();
+//             windowSize.width = width;
+//             windowSize.height = height;
+//             if (graphicsBase::Base().RecreateSwapchain()) {
+//                 std::cerr << "Failed to recreate swapchain\n";
+//                 break;
+//             }
+//             prevWindowSize = windowSize;
+//             continue;
+//         }
         processInput(mWindow);
         glfwPollEvents();
 
@@ -103,8 +153,17 @@ void Viewer::mainloop()
         }
         else
         {
+            auto i = graphicsBase::Base().CurrentImageIndex();
+            auto &CommandBuffer = mRender->getCurrentShader()->getCommandBuffer();
+            CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            VkClearValue clearValues[2];
+            std::memcpy(clearValues, mRender->getMaterialShader()->getClearValue(), sizeof(clearValues));
+            auto &rpfw = mRender->getRPWF();
+            rpfw.pass.CmdBegin(CommandBuffer, rpfw.framebuffers[i], {{}, windowSize}, clearValues);
             ImGui::Render();
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mRender->getCurrentShader()->getCommandBuffer(), mRender->getCurrentShader()->getPipeline());
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mRender->getCurrentShader()->getCommandBuffer(), VK_NULL_HANDLE);
+            rpfw.pass.CmdEnd(CommandBuffer);
+            CommandBuffer.End();
         }
 
         glfwSwapBuffers(mWindow);

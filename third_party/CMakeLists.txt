@@ -21,6 +21,7 @@ add_library(imgui
         imgui/imgui_widgets.cpp
         imgui/backends/imgui_impl_glfw.cpp
         imgui/backends/imgui_impl_opengl3.cpp
+        imgui/backends/imgui_impl_vulkan.cpp
 )
 target_include_directories(imgui PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui
