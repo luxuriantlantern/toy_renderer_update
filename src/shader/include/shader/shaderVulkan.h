@@ -79,6 +79,7 @@ public:
     descriptorSet& getDescriptorSet() override { return mdescriptorSet_triangle; }
     pipelineLayout& getPipelineLayout() override { return pipelineLayout_triangle; }
     pipeline& getPipeline() override { return pipeline_triangle; }
+    descriptorSetLayout& getDescriptorSetLayout() override { return descriptorSetLayout_triangle; }
 
 private:
     shaderModule vert, frag, geom;
@@ -87,8 +88,6 @@ private:
     pipelineLayout pipelineLayout_triangle;
     pipeline pipeline_triangle;
 
-//    uniformBuffer muniformBuffer = std::move(uniformBuffer(sizeof(uniformBufferObject)));
-//    descriptorPool mdescriptorPool = std::move(descriptorPool(1, VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }));
     std::optional<uniformBuffer> muniformBuffer;
     std::optional<uniformBuffer> mHasTextureBuffer;
     std::optional<descriptorPool> mdescriptorPool;

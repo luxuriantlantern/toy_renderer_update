@@ -10,23 +10,22 @@
 #include <iostream>
 
 void Render_Vulkan::init() {
-    // mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
-    //         "./assets/shaders/Blinn-Phong_v.vert",
-    //         "./assets/shaders/Blinn-Phong_v.frag"
-    // );
+    mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
+            "./assets/shaders/Blinn-Phong_v.vert",
+            "./assets/shaders/Blinn-Phong_v.frag"
+    );
     mShaders[SHADER_TYPE::MATERIAL] = std::make_shared<shaderVulkan>(
             "./assets/shaders/material_v.vert",
             "./assets/shaders/material_v.frag"
     );
-    // mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
+    mShaders[SHADER_TYPE::Blinn_Phong]->setShaderType(SHADER_TYPE::Blinn_Phong);
     mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
-//    for(auto & shader : mShaders)
-//    {
-//        shader.second->init();
-//    }
-//    mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
+    for(auto & shader : mShaders)
+    {
+        shader.second->init();
+    }
+    // mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
-    mCurrentShader.second->init();
 }
 
 void Render_Vulkan::cleanup() {
@@ -56,24 +55,55 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
         const std::vector<glm::vec2>& texCoords = model->getTexCoords(i);
         const std::string& texturePath = model->getTexturePath(i);
 
+        if(!texturePath.empty())
+        {
+            resources.uniformBuffers.emplace_back(sizeof(shaderVulkan::uniformBufferObject));
+            resources.hasTextureBuffers.emplace_back(sizeof(int));
+            VkDescriptorPoolSize poolSizes[] = {
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+            };
+            resources.descriptorPools.emplace_back(1, poolSizes);
+            resources.descriptorSets.emplace_back();
+            resources.descriptorPools.back().AllocateSets(resources.descriptorSets.back(), getMaterialShader()->getDescriptorSetLayout());
 
-//        resources.descriptorSets.emplace_back(getMaterialShader()->allocateDescriptorSet());
-//        if(!texturePath.empty())
-//        {
-//            resources.textures.emplace_back(texturePath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
-//            VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-//            resources.samplers.emplace_back(samplerInfo);
-//            VkDescriptorImageInfo imageInfo = resources.textures.back().DescriptorImageInfo(resources.samplers.back());
-//            resources.descriptorSets.back().Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
-//        }
-//        else
-//        {
-//            resources.textures.emplace_back("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
-//            VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-//            resources.samplers.emplace_back(samplerInfo);
-//            VkDescriptorImageInfo imageInfo = resources.textures.back().DescriptorImageInfo(resources.samplers.back());
-//            resources.descriptorSets.back().Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
-//        }
+            VkDescriptorBufferInfo unifromBufferInfo = {
+                .buffer = resources.uniformBuffers.back(),
+                .offset = 0,
+                .range = sizeof(shaderVulkan::uniformBufferObject)
+            };
+            VkDescriptorBufferInfo intInfo = {
+                .buffer = resources.hasTextureBuffers.back(),
+                .offset = 0,
+                .range = sizeof(int)
+            };
+            VkWriteDescriptorSet writes[] = {
+                {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = resources.descriptorSets.back(),
+                    .dstBinding = 0,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .pBufferInfo = &unifromBufferInfo
+            },
+            {
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = resources.descriptorSets.back(),
+                .dstBinding = 1,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .pBufferInfo = &intInfo
+            }
+            };
+            vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
+            resources.textures.emplace_back(texturePath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+            VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
+            resources.samplers.emplace_back(samplerInfo);
+            VkDescriptorImageInfo imageInfo = resources.textures.back().DescriptorImageInfo(resources.samplers.back());
+            resources.descriptorSets.back().Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
+        }
 
         if(!texCoords.empty())
         {
@@ -83,7 +113,7 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
                 buffer.push_back({vertices[j], normals[j], tex});
             }
 
-            resources.vertexBuffers_Material.emplace_back((buffer.size() + 5) * sizeof(shaderVulkan::material));
+            resources.vertexBuffers_Material.emplace_back((buffer.size() + 1) * sizeof(shaderVulkan::material));
             resources.vertexBuffers_Material.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::material));
         }
         std::vector<shaderVulkan::vertex> buffer;
@@ -91,10 +121,9 @@ void Render_Vulkan::addModel(const std::shared_ptr<Object>& model) {
             buffer.push_back({vertices[j], normals[j]});
         }
 
-        // resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
-        // resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
+        resources.vertexBuffers.emplace_back(buffer.size() * sizeof(shaderVulkan::vertex));
+        resources.vertexBuffers.back().TransferData(buffer.data(), buffer.size() * sizeof(shaderVulkan::vertex));
         resources.vertexCounts.push_back(static_cast<uint32_t>(vertices.size()));
-//  TODO: add 2d texture
     }
 
 }
@@ -147,6 +176,7 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         shader->getUniformBuffer().TransferData(&ubo, sizeof(ubo));
 //      TODO: Finish material
         for(size_t idx = 0; idx < mModelResources[model].vertexCounts.size(); ++idx) {
+            mModelResources[model].uniformBuffers[idx].TransferData(&ubo, sizeof(ubo));
             VkDeviceSize offset = 0;
             if(shader->getShaderType() == SHADER_TYPE::Blinn_Phong)
                 vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers[idx].Address(), &offset);
@@ -156,22 +186,10 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
             std::optional<texture2d>texture;
             std::optional<sampler> msampler;
             uint32_t hasTexture = model->getTexCoords(idx).size();
-
-            if(shader->getShaderType() == SHADER_TYPE::MATERIAL)
-            {
-                shader->getHasTextureBuffer().TransferData(&hasTexture, sizeof(uint32_t));
-                if(hasTexture)
-                {
-//                    texture.emplace(model->getTexturePath(idx).c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
-//                    VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-//                    msampler.emplace(samplerInfo);
-//                    VkDescriptorImageInfo imageInfo = texture->DescriptorImageInfo(*msampler);
-//                    shader->getDescriptorSet().Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
-                }
-            }
-            if(hasTexture)
+            mModelResources[model].hasTextureBuffers[idx].TransferData(&hasTexture, sizeof(uint32_t));
+            if(hasTexture && shader->getShaderType() == SHADER_TYPE::MATERIAL)
                 vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        shader->getPipelineLayout(), 0, 1, shader->getDescriptorSet().Address(), 0,
+                                        shader->getPipelineLayout(), 0, 1, mModelResources[model].descriptorSets[idx].Address(), 0,
                                         nullptr);
             else
                 vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -52,6 +52,7 @@ public:
     virtual pipeline& getPipeline() = 0;
     virtual uniformBuffer& getHasTextureBuffer() = 0;
     virtual descriptorSet allocateDescriptorSet() = 0;
+    virtual descriptorSetLayout& getDescriptorSetLayout() = 0;
 
 
 protected:

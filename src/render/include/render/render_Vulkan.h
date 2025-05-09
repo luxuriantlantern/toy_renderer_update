@@ -22,7 +22,7 @@ public:
         const std::shared_ptr<Scene>& scene,
         const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix
     ) override;
-    SHADER_BACKEND_TYPE getType() override { return SHADER_BACKEND_TYPE::OPENGL; }
+    SHADER_BACKEND_TYPE getType() override { return SHADER_BACKEND_TYPE::VULKAN; }
     void setShaderType(SHADER_TYPE type) override {
         mCurrentShader = { type, mShaders[type] };
     }
@@ -40,6 +40,9 @@ private:
         std::vector<descriptorSet> descriptorSets;
         std::vector<texture2d> textures;
         std::vector<sampler> samplers;
+        std::vector<uniformBuffer> uniformBuffers;
+        std::vector<uniformBuffer> hasTextureBuffers;
+        std::vector<descriptorPool> descriptorPools;
     };
     easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;

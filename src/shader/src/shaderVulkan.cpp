@@ -218,7 +218,7 @@ void shaderVulkan::initForUniform()
         };
         vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
 
-        dummyTexture.emplace("assets/SJTU_east_gate_MC/East_Gate_Voxel-RGB.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+        dummyTexture.emplace("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
         VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
         msampler.emplace(samplerInfo);
         VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);

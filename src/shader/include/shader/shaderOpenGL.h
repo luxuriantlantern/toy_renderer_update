@@ -77,6 +77,9 @@ public:
     descriptorSet allocateDescriptorSet() override {
         throw std::logic_error("OpenGL backend does not support allocateDescriptorSet");
     }
+    descriptorSetLayout& getDescriptorSetLayout() override {
+        throw std::logic_error("OpenGL backend does not support getDescriptorSetLayout");
+    }
 
 private:
 

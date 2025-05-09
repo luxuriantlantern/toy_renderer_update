@@ -98,6 +98,7 @@ int main() {
     auto render = std::make_shared<Render_Vulkan>();
     render->init();
     render->setup(scene);
+    float basetime = glfwGetTime();
     while(!glfwWindowShouldClose(pWindow)) {
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
             glfwWaitEvents();
@@ -121,6 +122,14 @@ int main() {
         processInput(pWindow); // 调用输入处理
         gCamera->update(width, height);
         render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
+        if(glfwGetTime() - basetime > 5.0f)
+        {
+            basetime = glfwGetTime();
+            if(render->getShaderType() == SHADER_TYPE::Blinn_Phong)
+                render->setShaderType(SHADER_TYPE::MATERIAL);
+            else
+                render->setShaderType(SHADER_TYPE::Blinn_Phong);
+        }
     }
     glfwTerminate();
 }
