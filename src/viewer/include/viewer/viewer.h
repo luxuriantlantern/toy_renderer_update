@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <imgui_impl_vulkan.h>
 #include <memory>
 
 #include "ui/ui.h"
@@ -35,6 +36,7 @@ public:
     ~Viewer();
 
     void initWindow(const std::string& title);
+    void setWindow(GLFWwindow* window) { mWindow = window; }
     void initBackend();
     void mainloop();
     void processInput(GLFWwindow* window);

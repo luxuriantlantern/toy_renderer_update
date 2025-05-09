@@ -6,7 +6,7 @@
 
 GLFWwindow* pWindow = nullptr;
 GLFWmonitor* pMonitor = nullptr;
-const char* windowTitle = "EasyVK";
+const char* windowTitle = "toy renderer";
 
 bool InitializeWindow(VkExtent2D size, bool fullScreen, bool isResizable, bool limitFrameRate)
 {

@@ -6,7 +6,13 @@
 #include <fstream>
 #include "viewer/viewer.h"
 
+#include "EasyVulkan/GlfwGeneral.hpp"
+
 void Viewer::initWindow(const std::string& title) {
+    if(mRender->getType() == SHADER_BACKEND_TYPE::VULKAN)
+    {
+        return;
+    }
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
@@ -49,7 +55,7 @@ void Viewer::initBackend() {
         ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
         ImGui_ImplOpenGL3_Init("#version 450");
     } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
-//        TODO
+        ImGui_ImplGlfw_InitForVulkan(mWindow, true);
     }
 }
 
@@ -63,8 +69,8 @@ void Viewer::mainloop()
 
         if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
             ImGui_ImplOpenGL3_NewFrame();
-        } else if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
-//          TODO
+        } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+            ImGui_ImplVulkan_NewFrame();
         }
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -97,7 +103,8 @@ void Viewer::mainloop()
         }
         else
         {
-//            TODO: finish Imgui for Vulkan
+            ImGui::Render();
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mRender->getCurrentShader()->getCommandBuffer(), mRender->getCurrentShader()->getPipeline());
         }
 
         glfwSwapBuffers(mWindow);

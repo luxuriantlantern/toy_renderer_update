@@ -31,6 +31,10 @@ public:
         return mShaders[SHADER_TYPE::MATERIAL];
     }
 
+    std::shared_ptr<Shader> getCurrentShader() {
+        return mCurrentShader.second;
+    }
+
 protected:
     std::unordered_map<SHADER_TYPE, std::shared_ptr<Shader>> mShaders;
     std::pair<SHADER_TYPE, std::shared_ptr<Shader>> mCurrentShader;

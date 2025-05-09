@@ -18,6 +18,11 @@
 #include <memory>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <viewer/viewer.h>
+#include <viewer/ui/ui.h>
+#include <viewer/ui/cameraUI.h>
+#include <viewer/ui/modelUI.h>
+#include <viewer/ui/shaderUI.h>
 
 // 全局变量
 std::shared_ptr<PerspectiveCamera> gCamera;
@@ -98,39 +103,48 @@ int main() {
     auto render = std::make_shared<Render_Vulkan>();
     render->init();
     render->setup(scene);
-    float basetime = glfwGetTime();
-    while(!glfwWindowShouldClose(pWindow)) {
-        while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
-            glfwWaitEvents();
+    auto viewer = std::make_shared<Viewer>(WIDTH, HEIGHT, render, gCamera, scene, title);
+    const auto ui_model = std::make_shared<ModelUI>(viewer);
+    const auto ui_shader = std::make_shared<ShaderUI>(viewer);
+    const auto ui_camera = std::make_shared<CameraUI>(viewer);
+    viewer->addUI(ui_model);
+    viewer->addUI(ui_shader);
+    viewer->addUI(ui_camera);
+    viewer->mainloop();
 
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(pWindow, &width, &height);
-
-        if (width > 0 && height > 0 &&
-            (width != prevWindowSize.width || height != prevWindowSize.height)) {
-            graphicsBase::Base().WaitIdle();
-            windowSize.width = width;
-            windowSize.height = height;
-            if (graphicsBase::Base().RecreateSwapchain()) {
-                std::cerr << "Failed to recreate swapchain\n";
-                break;
-            }
-            prevWindowSize = windowSize;
-            continue;
-        }
-
-        processInput(pWindow); // 调用输入处理
-        gCamera->update(width, height);
-        render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
-        if(glfwGetTime() - basetime > 5.0f)
-        {
-            basetime = glfwGetTime();
-            if(render->getShaderType() == SHADER_TYPE::Blinn_Phong)
-                render->setShaderType(SHADER_TYPE::MATERIAL);
-            else
-                render->setShaderType(SHADER_TYPE::Blinn_Phong);
-        }
-        TitleFps();
-    }
-    glfwTerminate();
+    // float basetime = glfwGetTime();
+    // while(!glfwWindowShouldClose(pWindow)) {
+    //     while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
+    //         glfwWaitEvents();
+    //
+    //     int width = 0, height = 0;
+    //     glfwGetFramebufferSize(pWindow, &width, &height);
+    //
+    //     if (width > 0 && height > 0 &&
+    //         (width != prevWindowSize.width || height != prevWindowSize.height)) {
+    //         graphicsBase::Base().WaitIdle();
+    //         windowSize.width = width;
+    //         windowSize.height = height;
+    //         if (graphicsBase::Base().RecreateSwapchain()) {
+    //             std::cerr << "Failed to recreate swapchain\n";
+    //             break;
+    //         }
+    //         prevWindowSize = windowSize;
+    //         continue;
+    //     }
+    //
+    //     processInput(pWindow); // 调用输入处理
+    //     gCamera->update(width, height);
+    //     render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
+    //     if(glfwGetTime() - basetime > 5.0f)
+    //     {
+    //         basetime = glfwGetTime();
+    //         if(render->getShaderType() == SHADER_TYPE::Blinn_Phong)
+    //             render->setShaderType(SHADER_TYPE::MATERIAL);
+    //         else
+    //             render->setShaderType(SHADER_TYPE::Blinn_Phong);
+    //     }
+    //     TitleFps();
+    // }
+    // glfwTerminate();
 }
