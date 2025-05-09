@@ -130,6 +130,7 @@ int main() {
             else
                 render->setShaderType(SHADER_TYPE::Blinn_Phong);
         }
+        TitleFps();
     }
     glfwTerminate();
 }

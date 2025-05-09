@@ -85,7 +85,7 @@ protected:
     float mPitch = 0.0f;
     float mFov = 45.0f;
     float mNear = 0.1f;
-    float mFar = 100.0f;
+    float mFar = 2000.0f;
 
     int mwidth, mheight;
     float mAspectRatio;
