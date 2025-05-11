@@ -70,6 +70,7 @@ private:
     std::shared_ptr<Render> mRender;
     std::vector<std::shared_ptr<UI>> mUI;
     SHADER_BACKEND_TYPE mShaderBackendType = SHADER_BACKEND_TYPE::VULKAN;
+    VkDescriptorPool mImGuiDescriptorPool = VK_NULL_HANDLE;
 };
 
 

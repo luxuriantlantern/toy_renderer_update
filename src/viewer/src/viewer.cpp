@@ -9,7 +9,7 @@
 #include "EasyVulkan/GlfwGeneral.hpp"
 
 void Viewer::initWindow(const std::string& title) {
-    if(mRender->getType() == SHADER_BACKEND_TYPE::VULKAN)
+    if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN)
     {
         mWindow = pWindow;
         return;
@@ -56,36 +56,55 @@ void Viewer::initBackend() {
         ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
         ImGui_ImplOpenGL3_Init("#version 450");
     } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
-        ImGui_ImplGlfw_InitForVulkan(mWindow, true);
-        ImGui_ImplVulkan_InitInfo initInfo = {};
-        initInfo.Instance = graphicsBase::Base().Instance();
-        initInfo.PhysicalDevice = graphicsBase::Base().PhysicalDevice();
-        initInfo.Device = graphicsBase::Base().Device();
-        initInfo.Queue = graphicsBase::Base().getGraphicsQueue();
-        VkDescriptorPool imguiPool = VK_NULL_HANDLE;
-        VkDescriptorPoolSize pool_sizes[] = {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, 100 },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 100 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 },
-                // 可根据需要添加更多类型
-        };
+        VkDescriptorPoolSize pool_sizes[] =
+                {
+                        { VK_DESCRIPTOR_TYPE_SAMPLER, 100 },
+                        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 },
+                        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 100 },
+                        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 100 },
+                        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100 },
+                        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 },
+                        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 100 },
+                        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 100 },
+                        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 100 }
+                };
+
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 100 * (uint32_t)(sizeof(pool_sizes)/sizeof(pool_sizes[0]));
-        pool_info.poolSizeCount = (uint32_t)(sizeof(pool_sizes)/sizeof(pool_sizes[0]));
+        pool_info.maxSets = 100;
+        pool_info.poolSizeCount = static_cast<uint32_t>(std::size(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
-        if (vkCreateDescriptorPool(graphicsBase::Base().Device(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create ImGui descriptor pool!");
+
+        VkResult err = vkCreateDescriptorPool(graphicsBase::Base().Device(), &pool_info, nullptr, &mImGuiDescriptorPool);
+        if (err != VK_SUCCESS) {
+            std::cerr << "无法创建 ImGui 描述符池: " << err << std::endl;
+            return;
         }
 
-// 传给 ImGui
-        initInfo.DescriptorPool = imguiPool;
-        initInfo.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
-        initInfo.ImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
-        initInfo.RenderPass = easyVulkan::CreateRpwf_ScreenWithDS().pass;
-        ImGui_ImplVulkan_Init(&initInfo);
+        ImGui_ImplGlfw_InitForVulkan(mWindow, true);
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = graphicsBase::Base().Instance();
+        init_info.PhysicalDevice = graphicsBase::Base().PhysicalDevice();
+        init_info.Device = graphicsBase::Base().Device();
+        init_info.QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(graphicsBase::Base().PhysicalDevice());
+        init_info.Queue = graphicsBase::Base().getGraphicsQueue();
+        init_info.PipelineCache = VK_NULL_HANDLE;
+        init_info.DescriptorPool = mImGuiDescriptorPool;
+        init_info.RenderPass = mRender->getRPWF().pass;
+        init_info.Subpass = 0;
+        init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
+        init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
+        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        init_info.Allocator = nullptr;
+        auto check_vk_result = [](VkResult err) {
+            if (err != 0)
+                std::cerr << "Vulkan 错误: " << err << std::endl;
+        };
+        init_info.CheckVkResultFn = check_vk_result;
+        ImGui_ImplVulkan_Init(&init_info);
+        ImGui_ImplVulkan_CreateFontsTexture();
+        ImGui_ImplVulkan_DestroyFontsTexture();
     }
 }
 
@@ -97,24 +116,24 @@ void Viewer::mainloop()
          while (glfwGetWindowAttrib(mWindow, GLFW_ICONIFIED))
              glfwWaitEvents();
 
-//         int width = 0, height = 0;
-//         glfwGetFramebufferSize(mWindow, &width, &height);
-//
-//         if (width > 0 && height > 0 &&
-//             (width != prevWindowSize.width || height != prevWindowSize.height)) {
-//             graphicsBase::Base().WaitIdle();
-//             windowSize.width = width;
-//             windowSize.height = height;
-//             if (graphicsBase::Base().RecreateSwapchain()) {
-//                 std::cerr << "Failed to recreate swapchain\n";
-//                 break;
-//             }
-//             prevWindowSize = windowSize;
-//             continue;
-//         }
+         int width = 0, height = 0;
+         glfwGetFramebufferSize(mWindow, &width, &height);
+         if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN) {
+             if (width > 0 && height > 0 &&
+                 (width != prevWindowSize.width || height != prevWindowSize.height)) {
+                 graphicsBase::Base().WaitIdle();
+                 windowSize.width = width;
+                 windowSize.height = height;
+                 if (graphicsBase::Base().RecreateSwapchain()) {
+                     std::cerr << "Failed to recreate swapchain\n";
+                     break;
+                 }
+                 prevWindowSize = windowSize;
+                 continue;
+             }
+         }
         processInput(mWindow);
         glfwPollEvents();
-
         glfwGetWindowSize(mWindow, &mwidth, &mheight);
 
         if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
@@ -124,7 +143,10 @@ void Viewer::mainloop()
         }
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        for(auto& ui : mUI)
+        {
+            ui->render();
+        }
 
         mCamera->update(mwidth, mheight);
         if (mRender) {
@@ -140,30 +162,32 @@ void Viewer::mainloop()
                 );
             }
         }
-        for(const auto& ui : mUI)
-        {
-            ui->render();
-        }
+        ImGui::Render();
+        ImDrawData* draw_data = ImGui::GetDrawData();
 
-//        End loop
-        if(mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
-        {
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+        if (is_minimized)
+            continue;
+
+        if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
         }
-        else
-        {
-            auto i = graphicsBase::Base().CurrentImageIndex();
+        else {
             auto &CommandBuffer = mRender->getCurrentShader()->getCommandBuffer();
-            CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VkClearValue clearValues[2];
-            std::memcpy(clearValues, mRender->getMaterialShader()->getClearValue(), sizeof(clearValues));
-            auto &rpfw = mRender->getRPWF();
-            rpfw.pass.CmdBegin(CommandBuffer, rpfw.framebuffers[i], {{}, windowSize}, clearValues);
-            ImGui::Render();
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mRender->getCurrentShader()->getCommandBuffer(), VK_NULL_HANDLE);
-            rpfw.pass.CmdEnd(CommandBuffer);
+            auto &rpwf = mRender->getRPWF();
+            ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
+            rpwf.pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
+            auto shader = mRender->getCurrentShader();
+            fence &Fence = shader->getFence();
+            semaphore &semaphore_imageIsAvailable = shader->getSemaphoreImageIsAvailable();
+            semaphore &semaphore_renderingIsOver = shader->getSemaphoreRenderingIsOver();
+            graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable,
+                                                              semaphore_renderingIsOver, Fence);
+            graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
+            glfwPollEvents();
+
+            Fence.WaitAndReset();
         }
 
         glfwSwapBuffers(mWindow);
@@ -187,6 +211,15 @@ void Viewer::mainloop()
 }
 
 Viewer::~Viewer() {
+    if (mRender && mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+        ImGui_ImplVulkan_Shutdown();
+        if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
+            mImGuiDescriptorPool = VK_NULL_HANDLE;
+        }
+    }
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
 }
 

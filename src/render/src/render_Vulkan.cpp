@@ -202,14 +202,4 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
             vkCmdDraw(CommandBuffer, mModelResources[model].vertexCounts[idx], 1, 0, 0);
         }
     }
-
-    rpwf.pass.CmdEnd(CommandBuffer);
-    CommandBuffer.End();
-
-    graphicsBase::Base().SubmitCommandBuffer_Graphics(CommandBuffer, semaphore_imageIsAvailable,
-                                                      semaphore_renderingIsOver, Fence);
-    graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
-    glfwPollEvents();
-
-    Fence.WaitAndReset();
 }

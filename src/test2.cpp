@@ -12,7 +12,6 @@
 #include <glslang/StandAlone/DirStackFileIncluder.h>
 #include <glslang/glslang/Public/ResourceLimits.h>
 #include "render/render_Vulkan.h"
-// test2.cpp
 #include "scene/scene.h"
 #include "camera/perspective.h"
 #include <memory>
@@ -111,40 +110,4 @@ int main() {
     viewer->addUI(ui_shader);
     viewer->addUI(ui_camera);
     viewer->mainloop();
-
-//     float basetime = glfwGetTime();
-//     while(!glfwWindowShouldClose(pWindow)) {
-//         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED))
-//             glfwWaitEvents();
-//
-//         int width = 0, height = 0;
-//         glfwGetFramebufferSize(pWindow, &width, &height);
-//
-//         if (width > 0 && height > 0 &&
-//             (width != prevWindowSize.width || height != prevWindowSize.height)) {
-//             graphicsBase::Base().WaitIdle();
-//             windowSize.width = width;
-//             windowSize.height = height;
-//             if (graphicsBase::Base().RecreateSwapchain()) {
-//                 std::cerr << "Failed to recreate swapchain\n";
-//                 break;
-//             }
-//             prevWindowSize = windowSize;
-//             continue;
-//         }
-//
-//         processInput(pWindow); // 调用输入处理
-//         gCamera->update(width, height);
-//         render->render(scene, gCamera->getViewMatrix(), gCamera->getProjectionMatrix());
-//         if(glfwGetTime() - basetime > 5.0f)
-//         {
-//             basetime = glfwGetTime();
-//             if(render->getShaderType() == SHADER_TYPE::Blinn_Phong)
-//                 render->setShaderType(SHADER_TYPE::MATERIAL);
-//             else
-//                 render->setShaderType(SHADER_TYPE::Blinn_Phong);
-//         }
-//         TitleFps();
-//     }
-//     glfwTerminate();
 }
