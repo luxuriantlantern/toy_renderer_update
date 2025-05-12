@@ -18,19 +18,41 @@
 
 #include "ui/ui.h"
 
+#include "EasyVulkan/GlfwGeneral.hpp"
+
 class UI;
 
 class Viewer {
 public:
     Viewer() = default;
-    Viewer(int width, int height, std::shared_ptr<Render>render, std::shared_ptr<Camera> camera, std::shared_ptr<Scene> scene, const std::string& title) {
+    Viewer(int width, int height, std::shared_ptr<Render>render_OpenGL, std::shared_ptr<Render> render_Vulkan,
+            std::shared_ptr<Camera> camera, std::shared_ptr<Scene> scene, const std::string& title) {
+
         mWindow = nullptr;
         mCamera = std::move(camera);
         mScene = std::move(scene);
         mwidth = width;
         mheight = height;
-        mRender = std::move(render);
-        initWindow(title);
+        mRender_OpenGL = std::move(render_OpenGL);
+        mRender_Vulkan = std::move(render_Vulkan);
+        if(mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+        {
+            mCurrentRender = mRender_OpenGL;
+            initWindow(title);
+        }
+        else
+        {
+            mCurrentRender = mRender_Vulkan;
+            if (!InitializeWindow({static_cast<uint32_t>(width), static_cast<uint32_t>(height)}))
+            {
+                std::cerr << "Failed to initialize window" << std::endl;
+                return;
+            }
+            windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+            mWindow = pWindow;
+        }
+        mCurrentRender->init();
+        mCurrentRender->setup(mScene);
         initBackend();
     };
     ~Viewer();
@@ -46,7 +68,7 @@ public:
     void setCamera(const std::shared_ptr<Camera>& camera) { mCamera = camera; mCamera->update(mwidth, mheight); }
     std::shared_ptr<Camera> getCamera() { return mCamera; }
     std::shared_ptr<Scene> getScene() { return mScene; }
-    std::shared_ptr<Render> getRender() {return mRender;}
+    std::shared_ptr<Render> getRender() {return mCurrentRender;}
     int getWidth() const { return mwidth; }
     int getHeight() const { return mheight; }
     float getMovementSpeed() const { return mMovementSpeed; }
@@ -67,7 +89,7 @@ private:
     float mMovementSpeed = 15.0f;
     float mMouseSensitivity = 0.1f;
     int mwidth, mheight;
-    std::shared_ptr<Render> mRender;
+    std::shared_ptr<Render> mRender_OpenGL, mRender_Vulkan, mCurrentRender;
     std::vector<std::shared_ptr<UI>> mUI;
     SHADER_BACKEND_TYPE mShaderBackendType = SHADER_BACKEND_TYPE::VULKAN;
     VkDescriptorPool mImGuiDescriptorPool = VK_NULL_HANDLE;

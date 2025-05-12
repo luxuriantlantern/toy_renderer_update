@@ -106,7 +106,7 @@ namespace vulkan {
 				WaitIdle();
 				if (swapchain) {
 					for (auto& i : callbacks_destroySwapchain)
-						i();
+						i(), WaitIdle();
 					for (auto& i : swapchainImageViews)
 						if (i)
 							vkDestroyImageView(device, i, nullptr);
@@ -114,6 +114,7 @@ namespace vulkan {
 				}
 				for (auto& i : callbacks_destroyDevice)
 					i();
+                WaitIdle();
 				vkDestroyDevice(device, nullptr);
 			}
 			if (surface)

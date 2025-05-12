@@ -27,6 +27,10 @@ public:
         mBackendType = VULKAN;
         mProgram = 0;
     }
+    ~shaderVulkan()
+    {
+        cleanup();
+    }
     std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& shaderSource, EShLanguage stage);
     std::string readFile(const std::string& filepath);
     void LoadShaders(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
@@ -89,6 +93,7 @@ private:
     pipeline pipeline_triangle;
 
     std::optional<uniformBuffer> muniformBuffer;
+    std::optional<uniformBuffer> mDummyBuffer;
     std::optional<uniformBuffer> mHasTextureBuffer;
     std::optional<descriptorPool> mdescriptorPool;
 

@@ -69,13 +69,6 @@ void shaderVulkan::init()
 {
     LoadShaders(mVertexPath, mFragmentPath, mGeometryPath);
 
-    VkDescriptorSetLayoutBinding binding = {
-        .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-    };
-
     VkDescriptorSetLayoutBinding bindings[3] = {
             { .binding = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },
             { .binding = 1, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1, .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT },
@@ -85,8 +78,8 @@ void shaderVulkan::init()
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
     };
-    if(mShaderType == SHADER_TYPE::Blinn_Phong)descriptorSetLayoutCreateInfo_triangle.bindingCount = 1, descriptorSetLayoutCreateInfo_triangle.pBindings = &binding;
-    else if(mShaderType == SHADER_TYPE::MATERIAL)descriptorSetLayoutCreateInfo_triangle.bindingCount = 3, descriptorSetLayoutCreateInfo_triangle.pBindings = bindings;
+
+    descriptorSetLayoutCreateInfo_triangle.bindingCount = 3, descriptorSetLayoutCreateInfo_triangle.pBindings = bindings;
 
     descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
 
@@ -107,20 +100,11 @@ void shaderVulkan::init()
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
         pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
 
-        if(mShaderType == SHADER_TYPE::Blinn_Phong || mShaderType == SHADER_TYPE::WIREFRAME)
-        {
-            pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX);
-            pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, position));
-            pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex, normal));
-        }
 
-        if(mShaderType == SHADER_TYPE::MATERIAL)
-        {
-            pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(material), VK_VERTEX_INPUT_RATE_VERTEX);
-            pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, position));
-            pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, normal));
-            pipelineCiPack.vertexInputAttributes.emplace_back(2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, tex));
-        }
+        pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(material), VK_VERTEX_INPUT_RATE_VERTEX);
+        pipelineCiPack.vertexInputAttributes.emplace_back(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, position));
+        pipelineCiPack.vertexInputAttributes.emplace_back(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, normal));
+        pipelineCiPack.vertexInputAttributes.emplace_back(2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(material, tex));
 
         pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipelineCiPack.viewports.emplace_back(0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f);
@@ -130,6 +114,18 @@ void shaderVulkan::init()
 
         // pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_BACK_BIT;
         // pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+        if(mShaderType == SHADER_TYPE::WIREFRAME)
+        {
+            pipelineCiPack.rasterizationStateCi.polygonMode = VK_POLYGON_MODE_LINE;
+            pipelineCiPack.rasterizationStateCi.lineWidth = 1.0f;
+        }
+
+        else
+        {
+            pipelineCiPack.rasterizationStateCi.polygonMode = VK_POLYGON_MODE_FILL;
+            pipelineCiPack.rasterizationStateCi.lineWidth = 1.0f;
+        }
 
         pipelineCiPack.depthStencilStateCi.depthTestEnable = VK_TRUE;
         pipelineCiPack.depthStencilStateCi.depthWriteEnable = VK_TRUE;
@@ -156,46 +152,41 @@ void shaderVulkan::init()
 
 void shaderVulkan::initForUniform()
 {
-    if(mShaderType == SHADER_TYPE::Blinn_Phong) {
-        muniformBuffer.emplace((sizeof(uniformBufferObject)));
-        mdescriptorPool.emplace(1, VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 });
-        mdescriptorPool->AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-        VkDescriptorBufferInfo mbufferInfo = {
-                .buffer = *muniformBuffer,
-                .offset = 0,
-                .range = sizeof(uniformBufferObject)
-        };
-        VkWriteDescriptorSet descriptorWrite = {
-                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .dstSet = mdescriptorSet_triangle,
-                .dstBinding = 0,
-                .dstArrayElement = 0,
-                .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .pBufferInfo = &mbufferInfo
-        };
-        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, &descriptorWrite, 0, nullptr);
-    }
-    if(mShaderType == SHADER_TYPE::MATERIAL) {
-        muniformBuffer.emplace((sizeof(uniformBufferObject)));
-        mHasTextureBuffer.emplace((sizeof(int)));
-        VkDescriptorPoolSize poolSizes[] = {
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-        };
-        mdescriptorPool.emplace(1, poolSizes);
-        mdescriptorPool->AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
-        VkDescriptorBufferInfo unifromBufferInfo = {
-                .buffer = *muniformBuffer,
-                .offset = 0,
-                .range = sizeof(uniformBufferObject)
-        };
-        VkDescriptorBufferInfo intInfo = {
-                .buffer = *mHasTextureBuffer,
-                .offset = 0,
-                .range = sizeof(int)
-        };
+    muniformBuffer.emplace((sizeof(uniformBufferObject)));
+    mHasTextureBuffer.emplace((sizeof(int)));
+    VkDescriptorPoolSize poolSizes[] = {
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+    };
+    mdescriptorPool.emplace(1, poolSizes);
+    mdescriptorPool->AllocateSets(mdescriptorSet_triangle, descriptorSetLayout_triangle);
+    VkDescriptorBufferInfo unifromBufferInfo = {
+            .buffer = *muniformBuffer,
+            .offset = 0,
+            .range = sizeof(uniformBufferObject)
+    };
+    VkDescriptorBufferInfo intInfo = {
+            .buffer = *mHasTextureBuffer,
+            .offset = 0,
+            .range = sizeof(int)
+    };
 
+    if (mShaderType == SHADER_TYPE::WIREFRAME) {
+        // Wireframe只需要UBO，不需要纹理和hasTexture标志
+        VkWriteDescriptorSet writes[] = {
+                {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = mdescriptorSet_triangle,
+                        .dstBinding = 0,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .pBufferInfo = &unifromBufferInfo
+                }
+        };
+        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, writes, 0, nullptr);
+    } else {
+        // 其他着色器类型使用完整的描述符集
         VkWriteDescriptorSet writes[] = {
                 {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -217,13 +208,19 @@ void shaderVulkan::initForUniform()
                 }
         };
         vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
-
-        dummyTexture.emplace("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
-        VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
-        msampler.emplace(samplerInfo);
-        VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);
-        mdescriptorSet_triangle.Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
     }
+
+    if(mShaderType == SHADER_TYPE::Blinn_Phong || mShaderType == SHADER_TYPE::WIREFRAME)
+    {
+        int dummpyHasTexture = 0;
+        mHasTextureBuffer->TransferData(&dummpyHasTexture, sizeof(int));
+    }
+
+    dummyTexture.emplace("assets/textures/testImage.png", VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, true);
+    VkSamplerCreateInfo samplerInfo = texture::SamplerCreateInfo();
+    msampler.emplace(samplerInfo);
+    VkDescriptorImageInfo imageInfo = dummyTexture->DescriptorImageInfo(*msampler);
+    mdescriptorSet_triangle.Write(imageInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2);
 }
 
 void shaderVulkan::setBool(const std::string &name, bool value) const {
@@ -254,43 +251,48 @@ void shaderVulkan::setMat4(const std::string &name, const glm::mat4 &mat) const 
 void shaderVulkan::cleanup() {
     if (mBackendType != VULKAN) return;
     graphicsBase::Base().WaitIdle();
-
-    // 释放 fence 和 semaphore
-    mfence.~fence();
-    msemaphore_imageIsAvailable.~semaphore();
-    msemaphore_renderingIsOver.~semaphore();
-
-    // 释放 Vulkan pipeline 相关资源
-    pipeline_triangle.~pipeline();
-    pipelineLayout_triangle.~pipelineLayout();
-    descriptorSetLayout_triangle.~descriptorSetLayout();
-
-
+    if (pipeline_triangle) {
+        vkDestroyPipeline(graphicsBase::Base().Device(), pipeline_triangle, nullptr);
+    }
+    if (pipelineLayout_triangle) {
+        vkDestroyPipelineLayout(graphicsBase::Base().Device(), pipelineLayout_triangle, nullptr);
+    }
+    if (descriptorSetLayout_triangle) {
+        vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), descriptorSetLayout_triangle, nullptr);
+    }
     if (mdescriptorPool) {
         mdescriptorPool->~descriptorPool();
         mdescriptorPool.reset();
     }
-
-    if (muniformBuffer) {
-        muniformBuffer->~uniformBuffer();
-        muniformBuffer.reset();
-    }
-
-    if (mHasTextureBuffer) {
-        mHasTextureBuffer->~uniformBuffer();
-        mHasTextureBuffer.reset();
-    }
-
-    if (dummyTexture) {
-        dummyTexture->~texture2d();
-        dummyTexture.reset();
-    }
-
     if (msampler) {
         msampler->~sampler();
         msampler.reset();
     }
-
-    vert.~shaderModule();
-    frag.~shaderModule();
+    if (dummyTexture) {
+        dummyTexture->~texture2d();
+        dummyTexture.reset();
+    }
+    if (muniformBuffer) {
+        muniformBuffer->~uniformBuffer();
+        muniformBuffer.reset();
+    }
+    if (mHasTextureBuffer) {
+        mHasTextureBuffer->~uniformBuffer();
+        mHasTextureBuffer.reset();
+    }
+    if (vert) {
+        vkDestroyShaderModule(graphicsBase::Base().Device(), vert, nullptr);
+    }
+    if (frag) {
+        vkDestroyShaderModule(graphicsBase::Base().Device(), frag, nullptr);
+    }
+    if (mfence) {
+        vkDestroyFence(graphicsBase::Base().Device(), mfence, nullptr);
+    }
+    if (msemaphore_imageIsAvailable) {
+        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_imageIsAvailable, nullptr);
+    }
+    if (msemaphore_renderingIsOver) {
+        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_renderingIsOver, nullptr);
+    }
 }

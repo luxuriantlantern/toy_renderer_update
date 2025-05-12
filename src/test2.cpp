@@ -12,6 +12,7 @@
 #include <glslang/StandAlone/DirStackFileIncluder.h>
 #include <glslang/glslang/Public/ResourceLimits.h>
 #include "render/render_Vulkan.h"
+#include "render/render_OpenGL.h"
 #include "scene/scene.h"
 #include "camera/perspective.h"
 #include <memory>
@@ -22,6 +23,7 @@
 #include <viewer/ui/cameraUI.h>
 #include <viewer/ui/modelUI.h>
 #include <viewer/ui/shaderUI.h>
+
 
 // 全局变量
 std::shared_ptr<PerspectiveCamera> gCamera;
@@ -94,15 +96,11 @@ int main() {
     gCamera = std::make_shared<PerspectiveCamera>();
     gCamera->update(WIDTH, HEIGHT);
 
-    if (!InitializeWindow({WIDTH, HEIGHT}))
-        return -1;
-    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
-    VkExtent2D prevWindowSize = windowSize;
 
     auto render = std::make_shared<Render_Vulkan>();
-    render->init();
-    render->setup(scene);
-    auto viewer = std::make_shared<Viewer>(WIDTH, HEIGHT, render, gCamera, scene, title);
+    auto render2 = std::make_shared<Render_OpenGL>();
+
+    auto viewer = std::make_shared<Viewer>(WIDTH, HEIGHT, render2, render, gCamera, scene, title);
     const auto ui_model = std::make_shared<ModelUI>(viewer);
     const auto ui_shader = std::make_shared<ShaderUI>(viewer);
     const auto ui_camera = std::make_shared<CameraUI>(viewer);

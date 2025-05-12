@@ -6,8 +6,6 @@
 #include <fstream>
 #include "viewer/viewer.h"
 
-#include "EasyVulkan/GlfwGeneral.hpp"
-
 void Viewer::initWindow(const std::string& title) {
     if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN)
     {
@@ -52,10 +50,10 @@ void Viewer::initBackend() {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+    if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
         ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
         ImGui_ImplOpenGL3_Init("#version 450");
-    } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+    } else if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
         VkDescriptorPoolSize pool_sizes[] =
                 {
                         { VK_DESCRIPTOR_TYPE_SAMPLER, 100 },
@@ -91,7 +89,7 @@ void Viewer::initBackend() {
         init_info.Queue = graphicsBase::Base().getGraphicsQueue();
         init_info.PipelineCache = VK_NULL_HANDLE;
         init_info.DescriptorPool = mImGuiDescriptorPool;
-        init_info.RenderPass = mRender->getRPWF().pass;
+        init_info.RenderPass = mCurrentRender->getRPWF().pass;
         init_info.Subpass = 0;
         init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
         init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
@@ -136,9 +134,9 @@ void Viewer::mainloop()
         glfwPollEvents();
         glfwGetWindowSize(mWindow, &mwidth, &mheight);
 
-        if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+        if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
             ImGui_ImplOpenGL3_NewFrame();
-        } else if (mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+        } else if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
             ImGui_ImplVulkan_NewFrame();
         }
         ImGui_ImplGlfw_NewFrame();
@@ -149,13 +147,13 @@ void Viewer::mainloop()
         }
 
         mCamera->update(mwidth, mheight);
-        if (mRender) {
-            if(mRender->getType() != mShaderBackendType)
+        if (mCurrentRender) {
+            if(mCurrentRender->getType() != mShaderBackendType)
             {
 //                TODO: switch to Vulkan
             }
             else{
-                mRender->render(
+                mCurrentRender->render(
                         mScene,
                         mCamera->getViewMatrix(),
                         mCamera->getProjectionMatrix()
@@ -169,16 +167,16 @@ void Viewer::mainloop()
         if (is_minimized)
             continue;
 
-        if (mRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+        if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);
         }
         else {
-            auto &CommandBuffer = mRender->getCurrentShader()->getCommandBuffer();
-            auto &rpwf = mRender->getRPWF();
+            auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer();
+            auto &rpwf = mCurrentRender->getRPWF();
             ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
             rpwf.pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
-            auto shader = mRender->getCurrentShader();
+            auto shader = mCurrentRender->getCurrentShader();
             fence &Fence = shader->getFence();
             semaphore &semaphore_imageIsAvailable = shader->getSemaphoreImageIsAvailable();
             semaphore &semaphore_renderingIsOver = shader->getSemaphoreRenderingIsOver();
@@ -211,7 +209,7 @@ void Viewer::mainloop()
 }
 
 Viewer::~Viewer() {
-    if (mRender && mRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
+    if (mCurrentRender && mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
         ImGui_ImplVulkan_Shutdown();
         if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
             vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);

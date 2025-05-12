@@ -30,14 +30,13 @@ public:
         return mCurrentShader.first;
     }
     easyVulkan::renderPassWithFramebuffers& getRPWF() override {
-        return rpwf;
+        return rpwf->get();
     }
 
 private:
     void cleanup() override;
     void loadTexture(const std::string& path, GLuint& textureID);
     struct VulkanModelResources {
-        std::vector<vertexBuffer> vertexBuffers;
         std::vector<uint32_t> vertexCounts;
         std::vector<vertexBuffer> vertexBuffers_Material;
         std::vector<descriptorSet> descriptorSets;
@@ -47,7 +46,7 @@ private:
         std::vector<uniformBuffer> hasTextureBuffers;
         std::vector<descriptorPool> descriptorPools;
     };
-    easyVulkan::renderPassWithFramebuffers& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
+    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf;
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;
 };
 
