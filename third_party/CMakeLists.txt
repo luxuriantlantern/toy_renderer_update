@@ -13,6 +13,8 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
 
+find_package(Vulkan REQUIRED)
+
 add_library(imgui
         imgui/imgui.cpp
         imgui/imgui_demo.cpp
@@ -27,7 +29,10 @@ target_include_directories(imgui PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
         ${CMAKE_CURRENT_SOURCE_DIR}/glfw/include
+        ${Vulkan_INCLUDE_DIRS}
 )
+
+target_link_libraries(imgui PUBLIC Vulkan::Vulkan)
 
 add_library(ImGuiFileDialog ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiFileDialog/ImGuiFileDialog.cpp)
 target_include_directories(ImGuiFileDialog PUBLIC
