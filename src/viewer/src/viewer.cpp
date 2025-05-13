@@ -7,11 +7,6 @@
 #include "viewer/viewer.h"
 
 void Viewer::initWindow(const std::string& title) {
-    if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN)
-    {
-        mWindow = pWindow;
-        return;
-    }
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
@@ -108,11 +103,16 @@ void Viewer::initBackend() {
 
 void Viewer::mainloop()
 {
-    windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
-    VkExtent2D prevWindowSize = windowSize;
+
     while (!glfwWindowShouldClose(mWindow)) {
          while (glfwGetWindowAttrib(mWindow, GLFW_ICONIFIED))
              glfwWaitEvents();
+
+        if (shouldswitch) {
+            switchBackend();
+            shouldswitch = false;
+            continue;
+        }
 
          int width = 0, height = 0;
          glfwGetFramebufferSize(mWindow, &width, &height);
@@ -131,6 +131,7 @@ void Viewer::mainloop()
              }
          }
         processInput(mWindow);
+
         glfwPollEvents();
         glfwGetWindowSize(mWindow, &mwidth, &mheight);
 
@@ -147,19 +148,8 @@ void Viewer::mainloop()
         }
 
         mCamera->update(mwidth, mheight);
-        if (mCurrentRender) {
-            if(mCurrentRender->getType() != mShaderBackendType)
-            {
-//                TODO: switch to Vulkan
-            }
-            else{
-                mCurrentRender->render(
-                        mScene,
-                        mCamera->getViewMatrix(),
-                        mCamera->getProjectionMatrix()
-                );
-            }
-        }
+        mCurrentRender->render(mScene, mCamera->getViewMatrix(), mCamera->getProjectionMatrix());
+
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 
@@ -207,6 +197,157 @@ void Viewer::mainloop()
         }
     }
 }
+
+void Viewer::switchBackend()
+{
+    // 1. 完全清理 ImGui 资源
+    if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+        ImGui_ImplOpenGL3_Shutdown();
+    } else { // Vulkan
+        ImGui_ImplVulkan_Shutdown();
+        if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
+            mImGuiDescriptorPool = VK_NULL_HANDLE;
+        }
+    }
+
+    // 必须清理 GLFW 后端，否则会出现"已经初始化平台后端"的断言错误
+    ImGui_ImplGlfw_Shutdown();
+
+    // 销毁 ImGui 上下文，确保完全重置状态
+    ImGui::DestroyContext();
+
+    // 2. 销毁当前窗口
+    if (mWindow) {
+        glfwDestroyWindow(mWindow);
+        mWindow = nullptr;
+    }
+
+    // 3. 切换后端类型
+    SHADER_BACKEND_TYPE newBackendType = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+                                         ? SHADER_BACKEND_TYPE::VULKAN
+                                         : SHADER_BACKEND_TYPE::OPENGL;
+    mShaderBackendType = newBackendType;
+    mCurrentRender = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+                     ? mRender_OpenGL
+                     : mRender_Vulkan;
+
+    // 4. 根据后端类型创建窗口
+    if (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL) {
+        // 创建 OpenGL 窗口
+        initWindow("Toy Render");
+        if (!mWindow) {
+            std::cerr << "无法创建 OpenGL 窗口，后端切换失败" << std::endl;
+            return;
+        }
+    } else {
+        // 创建 Vulkan 窗口
+        if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
+            std::cerr << "无法创建 Vulkan 窗口，后端切换失败" << std::endl;
+            return;
+        }
+        windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+        mWindow = pWindow;
+        prevWindowSize = windowSize;
+    }
+
+    // 5. 初始化渲染器
+    if (mCurrentRender) {
+        mCurrentRender->init();
+        mCurrentRender->setup(mScene);
+    }
+
+
+    initBackend();
+
+    firstMouse = true;
+    rightMousePressed = false;
+    leftMousePressed = false;
+}
+
+//void Viewer::switchBackend()
+//{
+//    // 1. 清理 ImGui 和当前窗口资源
+//    if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
+//        ImGui_ImplOpenGL3_Shutdown();
+//    } else {
+//        ImGui_ImplVulkan_Shutdown();
+//        if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
+//            vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
+//            mImGuiDescriptorPool = VK_NULL_HANDLE;
+//        }
+//    }
+//
+//    ImGui_ImplGlfw_Shutdown();
+//    ImGui::DestroyContext();
+//
+//    if (mWindow) {
+//        glfwDestroyWindow(mWindow);
+//        mWindow = nullptr;
+//    }
+//
+//    // 2. 切换后端类型
+//    SHADER_BACKEND_TYPE newBackendType = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+//                                         ? SHADER_BACKEND_TYPE::VULKAN
+//                                         : SHADER_BACKEND_TYPE::OPENGL;
+//    mShaderBackendType = newBackendType;
+//    mCurrentRender = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
+//                     ? mRender_OpenGL
+//                     : mRender_Vulkan;
+//
+//    // 3. 创建新窗口 - OpenGL 特殊处理
+//    if (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL) {
+//        // 明确设置 OpenGL 环境提示
+//        glfwDefaultWindowHints(); // 重置所有提示
+//        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//
+//        mWindow = glfwCreateWindow(mwidth, mheight, "Toy Render - OpenGL", nullptr, nullptr);
+//        if (!mWindow) {
+//            std::cerr << "无法创建 OpenGL 窗口" << std::endl;
+//            return;
+//        }
+//
+//        glfwMakeContextCurrent(mWindow);
+//
+//        // 初始化 GLAD - 关键步骤
+//        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+//            std::cerr << "Failed to initialize GLAD" << std::endl;
+//            glfwDestroyWindow(mWindow);
+//            mWindow = nullptr;
+//            return; // 立即返回，不继续执行
+//        }
+//
+//        // 设置视口
+//        int width, height;
+//        glfwGetFramebufferSize(mWindow, &width, &height);
+//        glViewport(0, 0, width, height);
+//    } else {
+//        // Vulkan 窗口初始化
+//        if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
+//            std::cerr << "无法创建 Vulkan 窗口" << std::endl;
+//            return;
+//        }
+//        windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
+//        mWindow = pWindow;
+//        prevWindowSize = windowSize;
+//    }
+//
+//    // 4. 初始化渲染器和 ImGui
+//    if (mWindow) { // 确保窗口创建成功
+//        mCurrentRender->init();
+//        mCurrentRender->setup(mScene);
+//
+//        IMGUI_CHECKVERSION();
+//        ImGui::CreateContext();
+//        ImGuiIO& io = ImGui::GetIO();
+//        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+//
+//        initBackend();
+//    }
+//}
+
 
 Viewer::~Viewer() {
     if (mCurrentRender && mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {

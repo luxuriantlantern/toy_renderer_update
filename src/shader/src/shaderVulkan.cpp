@@ -117,11 +117,13 @@ void shaderVulkan::init()
 
         if(mShaderType == SHADER_TYPE::WIREFRAME)
         {
+            pipelineCiPack.rasterizationStateCi.rasterizerDiscardEnable = VK_FALSE;
+            pipelineCiPack.rasterizationStateCi.depthClampEnable = VK_FALSE;
+            pipelineCiPack.rasterizationStateCi.depthBiasEnable = VK_FALSE;
             pipelineCiPack.rasterizationStateCi.polygonMode = VK_POLYGON_MODE_LINE;
             pipelineCiPack.rasterizationStateCi.lineWidth = 1.0f;
-
-            pipelineCiPack.rasterizationStateCi.cullMode    = VK_CULL_MODE_NONE;
-            pipelineCiPack.rasterizationStateCi.frontFace   = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            pipelineCiPack.rasterizationStateCi.cullMode = VK_CULL_MODE_NONE;
+            pipelineCiPack.rasterizationStateCi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         }
 
         else

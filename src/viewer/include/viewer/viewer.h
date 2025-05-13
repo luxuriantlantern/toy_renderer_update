@@ -50,6 +50,7 @@ public:
             }
             windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
             mWindow = pWindow;
+            prevWindowSize = windowSize;
         }
         mCurrentRender->init();
         mCurrentRender->setup(mScene);
@@ -61,6 +62,7 @@ public:
     void setWindow(GLFWwindow* window) { mWindow = window; }
     void initBackend();
     void mainloop();
+    void switchBackend();
     void processInput(GLFWwindow* window);
     void addUI(const std::shared_ptr<UI>& ui) {
         mUI.push_back(ui);
@@ -75,7 +77,8 @@ public:
     float getMouseSensitivity() const { return mMouseSensitivity; }
     void setMovementSpeed(float speed) { mMovementSpeed = speed; }
     void setMouseSensitivity(float sensitivity) { mMouseSensitivity = sensitivity; }
-
+    SHADER_BACKEND_TYPE getBackendType() const { return mShaderBackendType; }
+    void setSwitchType() { shouldswitch = true; }
 
 private:
     GLFWwindow* mWindow;
@@ -93,6 +96,8 @@ private:
     std::vector<std::shared_ptr<UI>> mUI;
     SHADER_BACKEND_TYPE mShaderBackendType = SHADER_BACKEND_TYPE::VULKAN;
     VkDescriptorPool mImGuiDescriptorPool = VK_NULL_HANDLE;
+    VkExtent2D prevWindowSize;
+    bool shouldswitch = false;
 };
 
 

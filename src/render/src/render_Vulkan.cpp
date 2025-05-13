@@ -29,14 +29,10 @@ void Render_Vulkan::init() {
     mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
     mShaders[SHADER_TYPE::WIREFRAME]->setShaderType(SHADER_TYPE::WIREFRAME);
 
-    // mShaders[SHADER_TYPE::MATERIAL]->init();
-    // mShaders[SHADER_TYPE::Blinn_Phong]->init();
-    // mShaders[SHADER_TYPE::WIREFRAME]->init();
     for(auto & shader : mShaders)
     {
         shader.second->init();
     }
-//     mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
 }
 
@@ -203,7 +199,7 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         for(size_t idx = 0; idx < mModelResources[model].vertexCounts.size(); ++idx) {
             mModelResources[model].uniformBuffers[idx].TransferData(&ubo, sizeof(ubo));
             VkDeviceSize offset = 0;
-            if(shader->getShaderType() == SHADER_TYPE::Blinn_Phong)
+            if(shader->getShaderType() == SHADER_TYPE::Blinn_Phong || shader->getShaderType() == SHADER_TYPE::WIREFRAME)
                 vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers_Material[idx].Address(), &offset);
             else if(shader->getShaderType() == SHADER_TYPE::MATERIAL)
                 vkCmdBindVertexBuffers(CommandBuffer, 0, 1, mModelResources[model].vertexBuffers_Material[idx].Address(), &offset);

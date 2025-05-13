@@ -15,6 +15,7 @@ class Viewer;
 class ModelUI;
 class ShaderUI;
 class CameraUI;
+class RenderUI;
 
 class UI {
 public:

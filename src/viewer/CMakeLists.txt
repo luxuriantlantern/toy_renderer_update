@@ -6,6 +6,7 @@ add_library(TR_LIB_VIEWER
         ${CMAKE_CURRENT_SOURCE_DIR}/include/viewer/ui/cameraUI.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/viewer/ui/modelUI.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/viewer/ui/shaderUI.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/viewer/ui/renderUI.h
 )
 target_include_directories(TR_LIB_VIEWER PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
