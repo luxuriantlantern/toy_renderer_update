@@ -29,13 +29,13 @@ void Render_Vulkan::init() {
     mShaders[SHADER_TYPE::MATERIAL]->setShaderType(SHADER_TYPE::MATERIAL);
     mShaders[SHADER_TYPE::WIREFRAME]->setShaderType(SHADER_TYPE::WIREFRAME);
 
-    mShaders[SHADER_TYPE::MATERIAL]->init();
-    mShaders[SHADER_TYPE::Blinn_Phong]->init();
-    mShaders[SHADER_TYPE::WIREFRAME]->init();
-//    for(auto & shader : mShaders)
-//    {
-//        shader.second->init();
-//    }
+    // mShaders[SHADER_TYPE::MATERIAL]->init();
+    // mShaders[SHADER_TYPE::Blinn_Phong]->init();
+    // mShaders[SHADER_TYPE::WIREFRAME]->init();
+    for(auto & shader : mShaders)
+    {
+        shader.second->init();
+    }
 //     mCurrentShader = { SHADER_TYPE::Blinn_Phong, mShaders[SHADER_TYPE::Blinn_Phong] };
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
 }

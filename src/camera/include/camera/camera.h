@@ -36,6 +36,7 @@ public:
         mPosition = glm::vec3(0.0f, 0.0f, 0.0f);
         mFront = glm::vec3(0.0f, 0.0f, -1.0f);
         mUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        mRight = glm::vec3(1.0f, 0.0f, 0.0f);
         mYaw = -90.0f;
         mPitch = 0.0f;
         mFov = 45.0f;

@@ -555,6 +555,7 @@ namespace vulkan {
 				queueFamilyIndex_compute != queueFamilyIndex_presentation)
 				queueCreateInfos[queueCreateInfoCount++].queueFamilyIndex = queueFamilyIndex_compute;
 			VkPhysicalDeviceFeatures physicalDeviceFeatures;
+			physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
 			vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 			VkDeviceCreateInfo deviceCreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

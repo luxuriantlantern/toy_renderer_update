@@ -90,12 +90,12 @@ void shaderVulkan::init()
     };
     pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
 
-    static VkPipelineShaderStageCreateInfo shaderStageCreateInfos_triangle[2] = {
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfos_triangle[2] = {
             vert.StageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
             frag.StageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)
     };
 
-    auto Create = [this] {
+    auto Create = [this, &shaderStageCreateInfos_triangle] {
         graphicsPipelineCreateInfoPack pipelineCiPack;
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
         pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
@@ -119,6 +119,9 @@ void shaderVulkan::init()
         {
             pipelineCiPack.rasterizationStateCi.polygonMode = VK_POLYGON_MODE_LINE;
             pipelineCiPack.rasterizationStateCi.lineWidth = 1.0f;
+
+            pipelineCiPack.rasterizationStateCi.cullMode    = VK_CULL_MODE_NONE;
+            pipelineCiPack.rasterizationStateCi.frontFace   = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         }
 
         else
@@ -171,44 +174,27 @@ void shaderVulkan::initForUniform()
             .range = sizeof(int)
     };
 
-    if (mShaderType == SHADER_TYPE::WIREFRAME) {
-        // Wireframe只需要UBO，不需要纹理和hasTexture标志
-        VkWriteDescriptorSet writes[] = {
-                {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = mdescriptorSet_triangle,
-                        .dstBinding = 0,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .pBufferInfo = &unifromBufferInfo
-                }
-        };
-        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 1, writes, 0, nullptr);
-    } else {
-        // 其他着色器类型使用完整的描述符集
-        VkWriteDescriptorSet writes[] = {
-                {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = mdescriptorSet_triangle,
-                        .dstBinding = 0,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .pBufferInfo = &unifromBufferInfo
-                },
-                {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = mdescriptorSet_triangle,
-                        .dstBinding = 1,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .pBufferInfo = &intInfo
-                }
-        };
-        vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
-    }
+    VkWriteDescriptorSet writes[] = {
+            {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = mdescriptorSet_triangle,
+                    .dstBinding = 0,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .pBufferInfo = &unifromBufferInfo
+            },
+            {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = mdescriptorSet_triangle,
+                    .dstBinding = 1,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .pBufferInfo = &intInfo
+            }
+    };
+    vkUpdateDescriptorSets(graphicsBase::Base().Device(), 2, writes, 0, nullptr);
 
     if(mShaderType == SHADER_TYPE::Blinn_Phong || mShaderType == SHADER_TYPE::WIREFRAME)
     {
