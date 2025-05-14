@@ -99,33 +99,32 @@ namespace vulkan {
 		//--------------------
 		graphicsBase() = default;
 		graphicsBase(graphicsBase&&) = delete;
-		~graphicsBase() {
-			if (!instance)
-				return;
-			if (device) {
-				WaitIdle();
-				if (swapchain) {
-					for (auto& i : callbacks_destroySwapchain)
-						i(), WaitIdle();
-					for (auto& i : swapchainImageViews)
-						if (i)
-							vkDestroyImageView(device, i, nullptr);
-					vkDestroySwapchainKHR(device, swapchain, nullptr);
-				}
-				for (auto& i : callbacks_destroyDevice)
-					i();
+        ~graphicsBase() {
+            if (!instance)
+                return;
+            if (device) {
                 WaitIdle();
-				vkDestroyDevice(device, nullptr);
-			}
-			if (surface)
-				vkDestroySurfaceKHR(instance, surface, nullptr);
-			if (debugMessenger) {
-				PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessenger =
-					reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-				if (DestroyDebugUtilsMessenger)
-					DestroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
-			}
-			vkDestroyInstance(instance, nullptr);
+                if (swapchain) {
+                    for (auto& i : callbacks_destroySwapchain)
+                        i(), WaitIdle();
+                    for (auto& i : swapchainImageViews)
+                        if (i)
+                            vkDestroyImageView(device, i, nullptr);
+                    vkDestroySwapchainKHR(device, swapchain, nullptr);
+                }
+                for (auto& i : callbacks_destroyDevice)
+                    i();
+                vkDestroyDevice(device, nullptr);
+            }
+            if (surface)
+                vkDestroySurfaceKHR(instance, surface, nullptr);
+            if (debugMessenger) {
+                PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessenger =
+                        reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+                if (DestroyDebugUtilsMessenger)
+                    DestroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
+            }
+            vkDestroyInstance(instance, nullptr);
 		}
 		//Non-const Function
 		result_t GetQueueFamilyIndices(VkPhysicalDevice physicalDevice, bool enableGraphicsQueue, bool enableComputeQueue, uint32_t(&queueFamilyIndices)[3]) {

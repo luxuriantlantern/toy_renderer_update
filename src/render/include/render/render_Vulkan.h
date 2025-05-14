@@ -29,9 +29,6 @@ public:
     SHADER_TYPE getShaderType() const override {
         return mCurrentShader.first;
     }
-    easyVulkan::renderPassWithFramebuffers& getRPWF() override {
-        return rpwf->get();
-    }
 
 private:
     void cleanup() override;
@@ -46,7 +43,6 @@ private:
         std::vector<uniformBuffer> hasTextureBuffers;
         std::vector<descriptorPool> descriptorPools;
     };
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf;
     std::unordered_map<std::shared_ptr<Object>, VulkanModelResources> mModelResources;
 };
 

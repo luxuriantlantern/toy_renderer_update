@@ -85,7 +85,7 @@ void Viewer::initBackend() {
         init_info.Queue = graphicsBase::Base().getGraphicsQueue();
         init_info.PipelineCache = VK_NULL_HANDLE;
         init_info.DescriptorPool = mImGuiDescriptorPool;
-        init_info.RenderPass = mCurrentRender->getRPWF().pass;
+        init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().pass;
         init_info.Subpass = 0;
         init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
         init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
@@ -162,7 +162,7 @@ void Viewer::mainloop()
         }
         else {
             auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer();
-            auto &rpwf = mCurrentRender->getRPWF();
+            auto &rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
             ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
             rpwf.pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
@@ -278,7 +278,7 @@ void Viewer::cleanupVulkan() {
 
         }
 
-        auto& rpwf = mCurrentRender->getRPWF();
+        auto& rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
         rpwf.pass.~renderPass();
         for(auto& framebuffer : rpwf.framebuffers) {
             framebuffer.~framebuffer();

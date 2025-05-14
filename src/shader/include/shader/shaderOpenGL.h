@@ -74,11 +74,11 @@ public:
     uniformBuffer& getHasTextureBuffer() override {
         throw std::logic_error("OpenGL backend does not support getHasTextureBuffer");
     }
-    descriptorSet allocateDescriptorSet() override {
-        throw std::logic_error("OpenGL backend does not support allocateDescriptorSet");
-    }
     descriptorSetLayout& getDescriptorSetLayout() override {
         throw std::logic_error("OpenGL backend does not support getDescriptorSetLayout");
+    }
+    const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() override {
+        throw std::logic_error("OpenGL backend does not support RenderPassAndFramebuffers");
     }
 
 private:

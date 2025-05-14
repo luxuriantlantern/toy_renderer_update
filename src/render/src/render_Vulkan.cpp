@@ -12,7 +12,6 @@
 #include <imgui_impl_vulkan.h>
 
 void Render_Vulkan::init() {
-    rpwf = std::ref(easyVulkan::CreateRpwf_ScreenWithDS());
     mShaders[SHADER_TYPE::Blinn_Phong] = std::make_shared<shaderVulkan>(
             "./assets/shaders/Blinn-Phong_v.vert",
             "./assets/shaders/Blinn-Phong_v.frag"
@@ -185,7 +184,8 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
 
     VkClearValue clearValues[2];
     std::memcpy(clearValues, shader->getClearValue(), sizeof(clearValues));
-    rpwf->get().pass.CmdBegin(CommandBuffer, rpwf->get().framebuffers[i], {{}, windowSize}, clearValues);
+    auto &rpwf = shader->RenderPassAndFramebuffers();
+    rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], {{}, windowSize}, clearValues);
 
     for (const auto& model : models) {
         shaderVulkan::uniformBufferObject ubo{};

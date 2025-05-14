@@ -145,7 +145,9 @@ void shaderVulkan::init()
         pipeline_triangle.Create(pipelineCiPack);
     };
 
-    auto Destroy = [this] { pipeline_triangle.~pipeline(); };
+    auto Destroy = [this] {
+        pipeline_triangle.~pipeline();
+    };
 
     graphicsBase::Base().AddCallback_CreateSwapchain(Create);
     graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
@@ -239,48 +241,45 @@ void shaderVulkan::setMat4(const std::string &name, const glm::mat4 &mat) const 
 void shaderVulkan::cleanup() {
     if (mBackendType != VULKAN) return;
     graphicsBase::Base().WaitIdle();
-    if (pipeline_triangle) {
-        vkDestroyPipeline(graphicsBase::Base().Device(), pipeline_triangle, nullptr);
-    }
-    if (pipelineLayout_triangle) {
-        vkDestroyPipelineLayout(graphicsBase::Base().Device(), pipelineLayout_triangle, nullptr);
-    }
-    if (descriptorSetLayout_triangle) {
-        vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), descriptorSetLayout_triangle, nullptr);
-    }
-    if (mdescriptorPool) {
-        mdescriptorPool->~descriptorPool();
-        mdescriptorPool.reset();
-    }
-    if (msampler) {
-        msampler->~sampler();
-        msampler.reset();
-    }
-    if (dummyTexture) {
-        dummyTexture->~texture2d();
-        dummyTexture.reset();
-    }
-    if (muniformBuffer) {
-        muniformBuffer->~uniformBuffer();
-        muniformBuffer.reset();
-    }
-    if (mHasTextureBuffer) {
-        mHasTextureBuffer->~uniformBuffer();
-        mHasTextureBuffer.reset();
-    }
-    if (vert) {
-        vkDestroyShaderModule(graphicsBase::Base().Device(), vert, nullptr);
-    }
-    if (frag) {
-        vkDestroyShaderModule(graphicsBase::Base().Device(), frag, nullptr);
-    }
-    if (mfence) {
-        vkDestroyFence(graphicsBase::Base().Device(), mfence, nullptr);
-    }
-    if (msemaphore_imageIsAvailable) {
-        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_imageIsAvailable, nullptr);
-    }
-    if (msemaphore_renderingIsOver) {
-        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_renderingIsOver, nullptr);
-    }
+//    if (pipelineLayout_triangle) {
+//        vkDestroyPipelineLayout(graphicsBase::Base().Device(), pipelineLayout_triangle, nullptr);
+//    }
+//    if (descriptorSetLayout_triangle) {
+//        vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), descriptorSetLayout_triangle, nullptr);
+//    }
+//    if (mdescriptorPool) {
+//        mdescriptorPool->~descriptorPool();
+//        mdescriptorPool.reset();
+//    }
+//    if (msampler) {
+//        msampler->~sampler();
+//        msampler.reset();
+//    }
+//    if (dummyTexture) {
+//        dummyTexture->~texture2d();
+//        dummyTexture.reset();
+//    }
+//    if (muniformBuffer) {
+//        muniformBuffer->~uniformBuffer();
+//        muniformBuffer.reset();
+//    }
+//    if (mHasTextureBuffer) {
+//        mHasTextureBuffer->~uniformBuffer();
+//        mHasTextureBuffer.reset();
+//    }
+//    if (vert) {
+//        vkDestroyShaderModule(graphicsBase::Base().Device(), vert, nullptr);
+//    }
+//    if (frag) {
+//        vkDestroyShaderModule(graphicsBase::Base().Device(), frag, nullptr);
+//    }
+//    if (mfence) {
+//        vkDestroyFence(graphicsBase::Base().Device(), mfence, nullptr);
+//    }
+//    if (msemaphore_imageIsAvailable) {
+//        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_imageIsAvailable, nullptr);
+//    }
+//    if (msemaphore_renderingIsOver) {
+//        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_renderingIsOver, nullptr);
+//    }
 }
