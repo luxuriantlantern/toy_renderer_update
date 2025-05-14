@@ -79,6 +79,14 @@ public:
     void setMouseSensitivity(float sensitivity) { mMouseSensitivity = sensitivity; }
     SHADER_BACKEND_TYPE getBackendType() const { return mShaderBackendType; }
     void setSwitchType() { shouldswitch = true; }
+    void cleanupVulkan();
+    void cleanupOpenGL()
+    {
+        mCurrentRender->cleanup();
+        for (auto& shader : mCurrentRender->getShaders()) {
+            shader.second->cleanup();
+        }
+    };
 
 private:
     GLFWwindow* mWindow;

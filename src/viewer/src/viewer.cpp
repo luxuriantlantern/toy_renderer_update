@@ -7,6 +7,7 @@
 #include "viewer/viewer.h"
 
 void Viewer::initWindow(const std::string& title) {
+    glfwDefaultWindowHints();
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
@@ -103,7 +104,6 @@ void Viewer::initBackend() {
 
 void Viewer::mainloop()
 {
-
     while (!glfwWindowShouldClose(mWindow)) {
          while (glfwGetWindowAttrib(mWindow, GLFW_ICONIFIED))
              glfwWaitEvents();
@@ -203,12 +203,10 @@ void Viewer::switchBackend()
     // 1. 完全清理 ImGui 资源
     if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
         ImGui_ImplOpenGL3_Shutdown();
+        cleanupOpenGL();
     } else { // Vulkan
         ImGui_ImplVulkan_Shutdown();
-        if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
-            vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
-            mImGuiDescriptorPool = VK_NULL_HANDLE;
-        }
+        cleanupVulkan();
     }
 
     // 必须清理 GLFW 后端，否则会出现"已经初始化平台后端"的断言错误
@@ -251,105 +249,46 @@ void Viewer::switchBackend()
         prevWindowSize = windowSize;
     }
 
+    initBackend();
+
+
     // 5. 初始化渲染器
     if (mCurrentRender) {
         mCurrentRender->init();
         mCurrentRender->setup(mScene);
     }
 
-
-    initBackend();
-
     firstMouse = true;
     rightMousePressed = false;
     leftMousePressed = false;
 }
 
-//void Viewer::switchBackend()
-//{
-//    // 1. 清理 ImGui 和当前窗口资源
-//    if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
-//        ImGui_ImplOpenGL3_Shutdown();
-//    } else {
-//        ImGui_ImplVulkan_Shutdown();
-//        if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
-//            vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
-//            mImGuiDescriptorPool = VK_NULL_HANDLE;
-//        }
-//    }
-//
-//    ImGui_ImplGlfw_Shutdown();
-//    ImGui::DestroyContext();
-//
-//    if (mWindow) {
-//        glfwDestroyWindow(mWindow);
-//        mWindow = nullptr;
-//    }
-//
-//    // 2. 切换后端类型
-//    SHADER_BACKEND_TYPE newBackendType = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
-//                                         ? SHADER_BACKEND_TYPE::VULKAN
-//                                         : SHADER_BACKEND_TYPE::OPENGL;
-//    mShaderBackendType = newBackendType;
-//    mCurrentRender = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
-//                     ? mRender_OpenGL
-//                     : mRender_Vulkan;
-//
-//    // 3. 创建新窗口 - OpenGL 特殊处理
-//    if (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL) {
-//        // 明确设置 OpenGL 环境提示
-//        glfwDefaultWindowHints(); // 重置所有提示
-//        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-//        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-//        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-//
-//        mWindow = glfwCreateWindow(mwidth, mheight, "Toy Render - OpenGL", nullptr, nullptr);
-//        if (!mWindow) {
-//            std::cerr << "无法创建 OpenGL 窗口" << std::endl;
-//            return;
-//        }
-//
-//        glfwMakeContextCurrent(mWindow);
-//
-//        // 初始化 GLAD - 关键步骤
-//        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-//            std::cerr << "Failed to initialize GLAD" << std::endl;
-//            glfwDestroyWindow(mWindow);
-//            mWindow = nullptr;
-//            return; // 立即返回，不继续执行
-//        }
-//
-//        // 设置视口
-//        int width, height;
-//        glfwGetFramebufferSize(mWindow, &width, &height);
-//        glViewport(0, 0, width, height);
-//    } else {
-//        // Vulkan 窗口初始化
-//        if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
-//            std::cerr << "无法创建 Vulkan 窗口" << std::endl;
-//            return;
-//        }
-//        windowSize = graphicsBase::Base().SwapchainCreateInfo().imageExtent;
-//        mWindow = pWindow;
-//        prevWindowSize = windowSize;
-//    }
-//
-//    // 4. 初始化渲染器和 ImGui
-//    if (mWindow) { // 确保窗口创建成功
-//        mCurrentRender->init();
-//        mCurrentRender->setup(mScene);
-//
-//        IMGUI_CHECKVERSION();
-//        ImGui::CreateContext();
-//        ImGuiIO& io = ImGui::GetIO();
-//        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-//
-//        initBackend();
-//    }
-//}
+void Viewer::cleanupVulkan() {
+    if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
+        vkDestroyDescriptorPool(graphicsBase::Base().Device(), mImGuiDescriptorPool, nullptr);
+        mImGuiDescriptorPool = VK_NULL_HANDLE;
+    }
+    if(mCurrentRender)
+    {
+        graphicsBase::Base().WaitIdle();
+        mCurrentRender->cleanup();
+        for(auto& shaders : mCurrentRender->getShaders()) {
+            auto shader = shaders.second;
+            shader->cleanup();
 
+        }
+
+        auto& rpwf = mCurrentRender->getRPWF();
+        rpwf.pass.~renderPass();
+        for(auto& framebuffer : rpwf.framebuffers) {
+            framebuffer.~framebuffer();
+        }
+    }
+}
 
 Viewer::~Viewer() {
+    if(mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN)cleanupVulkan();
+    else cleanupOpenGL();
     if (mCurrentRender && mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN) {
         ImGui_ImplVulkan_Shutdown();
         if (mImGuiDescriptorPool != VK_NULL_HANDLE) {
@@ -391,10 +330,7 @@ void Viewer::processInput(GLFWwindow *window) {
         mCamera->moveBackward(deltaTime, mMovementSpeed);
     }
 
-    // Mouse movement
-
     int rightMouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-//    int leftMouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
@@ -447,30 +383,4 @@ void Viewer::processInput(GLFWwindow *window) {
         glfwSetScrollCallback(window, scrollCallback);
         scrollCallbackSet = true;
     }
-
-    // if (leftMouseState == GLFW_PRESS) {
-    //     if (!leftMousePressed) {
-    //         leftMousePressed = true;
-    //         firstMouse = true;
-    //         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //     }
-    //
-    //     if (firstMouse) {
-    //         lastX = xpos;
-    //         lastY = ypos;
-    //         firstMouse = false;
-    //     }
-    //
-    //     float xoffset = xpos - lastX;
-    //     float yoffset = lastY - ypos;
-    //
-    //     lastX = xpos;
-    //     lastY = ypos;
-    //
-    //     mCamera->processLeftMouseMovement(xoffset, yoffset, mMouseSensitivity, mMovementSpeed);
-    // }
-    // else if (leftMousePressed) {
-    //     leftMousePressed = false;
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    // }
 }

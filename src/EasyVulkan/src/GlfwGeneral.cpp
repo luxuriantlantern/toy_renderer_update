@@ -10,6 +10,7 @@ const char* windowTitle = "toy renderer";
 
 bool InitializeWindow(VkExtent2D size, bool fullScreen, bool isResizable, bool limitFrameRate)
 {
+    glfwDefaultWindowHints();
     using namespace vulkan;
 
     if (!glfwInit()) {

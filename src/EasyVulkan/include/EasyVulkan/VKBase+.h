@@ -570,6 +570,14 @@ namespace vulkan {
         VkDescriptorImageInfo DescriptorImageInfo(VkSampler sampler) const {
             return { sampler, mimageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
         }
+        void Destroy(VkDevice device){
+            if(mimageView)
+                mimageView.~imageView();
+            if(mimageMemory.Image())
+                vkDestroyImage(device, mimageMemory.Image(), nullptr);
+            if(mimageMemory.Memory())
+                vkFreeMemory(device, mimageMemory.Memory(), nullptr);
+        }
     };
 
     class colorAttachment :public attachment {
