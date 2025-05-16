@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "camera/camera.h"
 #include "viewer/viewer.h"
 
 void Viewer::initWindow(const std::string& title) {
@@ -148,7 +149,21 @@ void Viewer::mainloop()
         }
 
         mCamera->update(mwidth, mheight);
-        mCurrentRender->render(mScene, mCamera->getViewMatrix(), mCamera->getProjectionMatrix());
+        if(mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN)
+        {
+            glm::mat4 proj = mCamera->getProjectionMatrix();
+            if(mCamera->getType() == CameraType::PERSPECTIVE)
+            {
+                for(int j = 0; j < 4; ++j)proj[j][1] *= -1;
+            }
+            else
+            {
+                proj[1][1] *= -1;
+                proj[2][2] = proj[2][2] * 0.5f;
+                proj[2][3] = (proj[2][3] + 1.0f) * 0.5f;
+            }
+            mCurrentRender->render(mScene, mCamera->getViewMatrix(), proj);
+        }
 
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
@@ -200,28 +215,22 @@ void Viewer::mainloop()
 
 void Viewer::switchBackend()
 {
-    // 1. 完全清理 ImGui 资源
     if (mCurrentRender->getType() == SHADER_BACKEND_TYPE::OPENGL) {
         ImGui_ImplOpenGL3_Shutdown();
         cleanupOpenGL();
-    } else { // Vulkan
+    } else {
         ImGui_ImplVulkan_Shutdown();
         cleanupVulkan();
     }
 
-    // 必须清理 GLFW 后端，否则会出现"已经初始化平台后端"的断言错误
     ImGui_ImplGlfw_Shutdown();
-
-    // 销毁 ImGui 上下文，确保完全重置状态
     ImGui::DestroyContext();
 
-    // 2. 销毁当前窗口
     if (mWindow) {
         glfwDestroyWindow(mWindow);
         mWindow = nullptr;
     }
 
-    // 3. 切换后端类型
     SHADER_BACKEND_TYPE newBackendType = (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL)
                                          ? SHADER_BACKEND_TYPE::VULKAN
                                          : SHADER_BACKEND_TYPE::OPENGL;
@@ -230,16 +239,13 @@ void Viewer::switchBackend()
                      ? mRender_OpenGL
                      : mRender_Vulkan;
 
-    // 4. 根据后端类型创建窗口
     if (mShaderBackendType == SHADER_BACKEND_TYPE::OPENGL) {
-        // 创建 OpenGL 窗口
         initWindow("Toy Render");
         if (!mWindow) {
             std::cerr << "无法创建 OpenGL 窗口，后端切换失败" << std::endl;
             return;
         }
     } else {
-        // 创建 Vulkan 窗口
         if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
             std::cerr << "无法创建 Vulkan 窗口，后端切换失败" << std::endl;
             return;
@@ -251,8 +257,6 @@ void Viewer::switchBackend()
 
     initBackend();
 
-
-    // 5. 初始化渲染器
     if (mCurrentRender) {
         mCurrentRender->init();
         mCurrentRender->setup(mScene);

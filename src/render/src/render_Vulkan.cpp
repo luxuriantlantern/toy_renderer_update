@@ -192,7 +192,6 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
         ubo.model = model->getModelMatrix();
         ubo.view = viewMatrix;
         ubo.proj = projectionMatrix;
-        for(int j = 0; j < 4; ++j) ubo.proj[j][1] *= -1;
 
         shader->getUniformBuffer().TransferData(&ubo, sizeof(ubo));
 //      TODO: Finish material

@@ -1441,7 +1441,12 @@ namespace vulkan {
 			Create(image, viewType, format, subresourceRange, flags);
 		}
 		imageView(imageView&& other) noexcept { MoveHandle; }
-		~imageView() { DestroyHandleBy(vkDestroyImageView); }
+		~imageView() {
+            std::cout << "11111\n" ;
+            if(!mCalledCreate)std::cout << "33333\n";
+            DestroyHandleBy(vkDestroyImageView);
+            std::cout << "2222\n";
+        }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1451,6 +1456,7 @@ namespace vulkan {
 			VkResult result = vkCreateImageView(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
 			if (result)
 				outStream << std::format("[ imageView ] ERROR\nFailed to create an image view!\nError code: {}\n", int32_t(result));
+            mCalledCreate = true;
 			return result;
 		}
 		result_t Create(VkImage image, VkImageViewType viewType, VkFormat format, const VkImageSubresourceRange& subresourceRange, VkImageViewCreateFlags flags = 0) {
@@ -1463,6 +1469,7 @@ namespace vulkan {
 			};
 			return Create(createInfo);
 		}
+    bool mCalledCreate = false;
 	};
 	class sampler {
 		VkSampler handle = VK_NULL_HANDLE;
