@@ -24,7 +24,7 @@ public:
         mViewMatrix = glm::lookAt(mPosition, mPosition + mFront, mUp);
 
         mAspectRatio = static_cast<float>(w) / static_cast<float>(h);
-        float orthoScale = 30.0f;
+        float orthoScale = 20.0f;
         float left = -orthoScale * mAspectRatio;
         float right = orthoScale * mAspectRatio;
         float bottom = -orthoScale;

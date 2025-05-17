@@ -14,7 +14,7 @@ extern GLFWwindow* pWindow;
 extern GLFWmonitor* pMonitor;
 extern const char* windowTitle;
 
-bool InitializeWindow(VkExtent2D size, bool fullScreen = false, bool isResizable = true, bool limitFrameRat = false);
+bool InitializeWindow(VkExtent2D size, bool fullScreen = false, bool isResizable = false, bool limitFrameRat = false);
 void TerminateWindow();
 void MakeWindowFullScreen();
 void MakeWindowWindowed(VkOffset2D position, VkExtent2D size);

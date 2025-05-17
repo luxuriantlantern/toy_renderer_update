@@ -116,6 +116,7 @@ void Viewer::mainloop()
         }
 
          int width = 0, height = 0;
+         // TODO: Avoid broken after changing window size
          glfwGetFramebufferSize(mWindow, &width, &height);
          if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN) {
              if (width > 0 && height > 0 &&
@@ -149,9 +150,9 @@ void Viewer::mainloop()
         }
 
         mCamera->update(mwidth, mheight);
+        glm::mat4 proj = mCamera->getProjectionMatrix();
         if(mCurrentRender->getType() == SHADER_BACKEND_TYPE::VULKAN)
         {
-            glm::mat4 proj = mCamera->getProjectionMatrix();
             if(mCamera->getType() == CameraType::PERSPECTIVE)
             {
                 for(int j = 0; j < 4; ++j)proj[j][1] *= -1;
@@ -160,11 +161,10 @@ void Viewer::mainloop()
             {
                 proj[1][1] *= -1;
                 proj[2][2] = proj[2][2] * 0.5f;
-                proj[2][3] = (proj[2][3] + 1.0f) * 0.5f;
+                proj[3][2] = (proj[3][2] + 1.0f) * 0.5f;
             }
-            mCurrentRender->render(mScene, mCamera->getViewMatrix(), proj);
         }
-
+        mCurrentRender->render(mScene, mCamera->getViewMatrix(), proj);
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 

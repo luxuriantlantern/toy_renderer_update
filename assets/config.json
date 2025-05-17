@@ -9,7 +9,7 @@
   },
   "objects": [
     {
-      "file": "../assets/cube.obj",
+      "file": "./assets/cube.obj",
       "position": [-2, -2, -2],
       "scale": [1, 1, 1],
       "rotation": {
@@ -18,7 +18,7 @@
       }
     },
     {
-      "file": "../assets/cube2.ply",
+      "file": "./assets/cube2.ply",
       "position": [0, 0, 0],
         "scale": [0.5, 0.5, 0.5],
         "rotation": {

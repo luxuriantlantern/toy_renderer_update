@@ -21,9 +21,11 @@ public:
     void addObject(std::shared_ptr<Object> object);
     void setCamera(std::shared_ptr<Camera> camera);
     std::shared_ptr<Camera> getCamera() const { return mCamera; }
-    std::shared_ptr<Object> addModel(const std::filesystem::path& filePath);
+    void addModel(const std::filesystem::path& filePath);
     std::vector<std::shared_ptr<Object>> getModels() const { return mObjects; }
     void removeModel(const std::shared_ptr<Object>& model);
+    void loadJSON(const std::filesystem::path& path);
+
 
 private:
     std::vector<std::shared_ptr<Object>> mObjects;

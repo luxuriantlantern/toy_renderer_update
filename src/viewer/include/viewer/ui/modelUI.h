@@ -29,7 +29,7 @@ public:
             {
                 ImGuiFileDialog::Instance()->OpenDialog(
                     "ChooseModelDlg", "Choose Model File",
-                    "3D Models{.obj,.ply},JSON{.json}");
+                    "3D Models{.obj,.ply,.json}");
             }
             ImGui::EndMenuBar();
         }
@@ -39,7 +39,8 @@ public:
             {
                 std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
                 std::cout << filePath << "\n";
-                mViewer->getRender()->addModel(mViewer->getScene()->addModel(filePath));
+                mViewer->getScene()->addModel(filePath);
+                mViewer->getRender()->setup(mViewer->getScene());
             }
             ImGuiFileDialog::Instance()->Close();
         }

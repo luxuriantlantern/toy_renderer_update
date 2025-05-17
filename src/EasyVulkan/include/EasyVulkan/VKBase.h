@@ -1442,10 +1442,10 @@ namespace vulkan {
 		}
 		imageView(imageView&& other) noexcept { MoveHandle; }
 		~imageView() {
-            std::cout << "11111\n" ;
-            if(!mCalledCreate)std::cout << "33333\n";
+            // std::cout << "11111\n" ;
+            // if(!mCalledCreate)std::cout << "33333\n";
             DestroyHandleBy(vkDestroyImageView);
-            std::cout << "2222\n";
+            // std::cout << "2222\n";
         }
 		//Getter
 		DefineHandleTypeOperator;

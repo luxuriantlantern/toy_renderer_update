@@ -7,6 +7,7 @@
 #include "tiny_obj_loader.h"
 #include "happly.h"
 #include <algorithm>
+#include <nlohmann/json.hpp>
 namespace fs = std::filesystem;
 
 Scene::Scene() {
@@ -23,7 +24,7 @@ void Scene::setCamera(std::shared_ptr<Camera> camera) {
 
 const std::unordered_map<std::string, std::function<void(const std::filesystem::path&, std::shared_ptr<Object>)>> Scene::loadModelFunctions = {
         {".obj", loadOBJModel},
-        {".ply", loadPLYModel}
+        {".ply", loadPLYModel},
 };
 
 void Scene::loadOBJModel(const fs::path &path, const std::shared_ptr<Object> &model) {
@@ -228,17 +229,79 @@ void Scene::loadPLYModel(const std::filesystem::path&path, const std::shared_ptr
     model->addShape(_shape);
 }
 
-std::shared_ptr<Object> Scene::addModel(const std::filesystem::path &filePath) {
+void Scene::loadJSON(const std::filesystem::path &path)
+{
+    std::ifstream file(path);
+    if(!file.is_open())
+    {
+        std::cerr << "Failed to open file: " << path << std::endl;
+        return;
+    }
+    nlohmann::json config = nlohmann::json::parse(file);
+    if(config.contains("objects"))
+    {
+        auto object = config["objects"];
+        for(auto &obj : object)
+        {
+            if(obj.contains("file"))
+            {
+                const std::filesystem::path &filePath = obj["file"];
+                auto mobject = std::make_shared<Object>();
+                std::string extension = filePath.extension().string();
+                const auto it = loadModelFunctions.find(extension);
+                if (it != loadModelFunctions.end()) {
+                    it->second(filePath, mobject);
+                } else {
+                    std::cerr << "Unsupported file format: " << extension << std::endl;
+                }
+                mobject->setModelMatrix(glm::vec3{0.0f, 0.0f, 0.0f});
+                if(obj.contains("position"))
+                {
+                    glm::vec3 pos = glm::vec3{obj["position"][0], obj["position"][1], obj["position"][2]};
+                    mobject->setModelMatrix(pos);
+                }
+                if(obj.contains("scale"))
+                {
+                    glm::vec3 scale = glm::vec3 {obj["scale"][0], obj["scale"][1], obj["scale"][2]};
+                    mobject->scale(scale);
+                }
+                if(obj.contains("rotation"))
+                {
+                    if(obj["rotation"].contains("type"))
+                    {
+                        if(obj["rotation"]["type"] == "euler_xyz")
+                        {
+                            glm::vec3 rot = glm::vec3{obj["rotation"]["data"][0], obj["rotation"]["data"][1], obj["rotation"]["data"][2]};
+                            mobject->rotateEulerXYZ(rot.x, rot.y, rot.z);
+                        }
+                        if(obj["rotation"]["type"] == "quaternion")
+                        {
+                            glm::quat quaternion = glm::quat(obj["rotation"]["data"][0], obj["rotation"]["data"][1],
+                                                             obj["rotation"]["data"][2], obj["rotation"]["data"][3]);
+                            mobject->rotateQuaternion(quaternion);
+                        }
+                    }
+                }
+                addObject(mobject);
+            }
+        }
+    }
+}
+
+void Scene::addModel(const std::filesystem::path &filePath) {
     std::string extension = filePath.extension().string();
-    auto it = loadModelFunctions.find(extension);
+    if(extension == ".json")
+    {
+        loadJSON(filePath);
+        return;
+    }
+    const auto it = loadModelFunctions.find(extension);
     if (it != loadModelFunctions.end()) {
         auto model = std::make_shared<Object>();
         it->second(filePath, model);
         addObject(model);
-        return model;
     } else {
         std::cerr << "Unsupported file format: " << extension << std::endl;
-        return nullptr;
     }
 }
 
