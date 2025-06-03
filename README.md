@@ -2,6 +2,8 @@
 
 An updated version of the previous [toy_render](https://github.com/luxuriantlantern/toy_renderer/), which has many bugs and cannot run directly.
 
+And this version references some code in [toy-render](https://github.com/UNIkeEN/toy-renderer)
+
 For this version, I still have many bugs to fix right now(25.5.17). And I add many absolute filepaths in the project, so you may need to open it with an IDE like CLion or Visual Studio Code to run it(At toy_renderer_update, the project's root). I will fix this in the future.
 
 ### Some functions I have finished:
