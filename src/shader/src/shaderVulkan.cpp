@@ -67,6 +67,7 @@ void shaderVulkan::LoadShaders(const std::string &vertexPath, const std::string 
 
 void shaderVulkan::init()
 {
+    mcommandPool.emplace(commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     LoadShaders(mVertexPath, mFragmentPath, mGeometryPath);
 
     VkDescriptorSetLayoutBinding bindings[3] = {
@@ -153,7 +154,7 @@ void shaderVulkan::init()
     graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
     Create();
 
-    mcommandPool.AllocateBuffers(mcommandBuffer);
+    mcommandPool.value().AllocateBuffers(mcommandBuffer);
     initForUniform();
 }
 

@@ -77,31 +77,37 @@ void Viewer::initBackend() {
             return;
         }
 
-        ImGui_ImplGlfw_InitForVulkan(mWindow, true);
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = graphicsBase::Base().Instance();
-        init_info.PhysicalDevice = graphicsBase::Base().PhysicalDevice();
-        init_info.Device = graphicsBase::Base().Device();
-        init_info.QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(graphicsBase::Base().PhysicalDevice());
-        init_info.Queue = graphicsBase::Base().getGraphicsQueue();
-        init_info.PipelineCache = VK_NULL_HANDLE;
-        init_info.DescriptorPool = mImGuiDescriptorPool;
-        init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().pass;
-        init_info.Subpass = 0;
-        init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
-        init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
-        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        init_info.Allocator = nullptr;
-        auto check_vk_result = [](VkResult err) {
-            if (err != 0)
-                std::cerr << "Vulkan 错误: " << err << std::endl;
-        };
-        init_info.CheckVkResultFn = check_vk_result;
-        ImGui_ImplVulkan_Init(&init_info);
-        ImGui_ImplVulkan_CreateFontsTexture();
-        ImGui_ImplVulkan_DestroyFontsTexture();
+
     }
 }
+
+void Viewer::initBackendVulkanImGUI()
+{
+    ImGui_ImplGlfw_InitForVulkan(mWindow, true);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = graphicsBase::Base().Instance();
+    init_info.PhysicalDevice = graphicsBase::Base().PhysicalDevice();
+    init_info.Device = graphicsBase::Base().Device();
+    init_info.QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(graphicsBase::Base().PhysicalDevice());
+    init_info.Queue = graphicsBase::Base().getGraphicsQueue();
+    init_info.PipelineCache = VK_NULL_HANDLE;
+    init_info.DescriptorPool = mImGuiDescriptorPool;
+    init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().pass;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
+    init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.Allocator = nullptr;
+    auto check_vk_result = [](VkResult err) {
+        if (err != 0)
+            std::cerr << "Vulkan 错误: " << err << std::endl;
+    };
+    init_info.CheckVkResultFn = check_vk_result;
+    ImGui_ImplVulkan_Init(&init_info);
+    ImGui_ImplVulkan_CreateFontsTexture();
+    ImGui_ImplVulkan_DestroyFontsTexture();
+}
+
 
 void Viewer::mainloop()
 {
@@ -262,6 +268,8 @@ void Viewer::switchBackend()
         mCurrentRender->setup(mScene);
     }
 
+    if (mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN)initBackendVulkanImGUI();
+
     firstMouse = true;
     rightMousePressed = false;
     leftMousePressed = false;
@@ -281,13 +289,9 @@ void Viewer::cleanupVulkan() {
             shader->cleanup();
 
         }
-
-        auto& rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
-        rpwf.pass.~renderPass();
-        for(auto& framebuffer : rpwf.framebuffers) {
-            framebuffer.~framebuffer();
-        }
+        graphicsBase::Base().cleanup();
     }
+
 }
 
 Viewer::~Viewer() {

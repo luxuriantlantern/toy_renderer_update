@@ -1,5 +1,6 @@
 #pragma once
 #include "EasyVKStart.h"
+#include <new>
 #define VK_RESULT_THROW
 
 #define DestroyHandleBy(Func) if (handle) { Func(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; }
@@ -249,6 +250,7 @@ namespace vulkan {
 			container.push_back(name);
 		}
 	public:
+		static void cleanup() { singleton.~graphicsBase(); new(&singleton) graphicsBase(); }
 		//Getter
 		uint32_t ApiVersion() const {
 			return apiVersion;
@@ -1444,6 +1446,7 @@ namespace vulkan {
 		~imageView() {
             // std::cout << "11111\n" ;
             // if(!mCalledCreate)std::cout << "33333\n";
+			if(mCalledCreate)
             DestroyHandleBy(vkDestroyImageView);
             // std::cout << "2222\n";
         }
