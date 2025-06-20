@@ -43,7 +43,7 @@ public:
     virtual uniformBuffer& getUniformBuffer() = 0;
 //    virtual renderPass& getRenderPass() = 0;
 //    virtual std::vector<framebuffer>& getFramebuffer() = 0;
-    virtual commandBuffer& getCommandBuffer() = 0;
+    virtual std::optional<commandBuffer> & getCommandBuffer() = 0;
     virtual fence& getFence() = 0;
     virtual semaphore& getSemaphoreRenderingIsOver() = 0;
     virtual VkClearValue* getClearValue() = 0;
@@ -52,7 +52,7 @@ public:
     virtual pipeline& getPipeline() = 0;
     virtual uniformBuffer& getHasTextureBuffer() = 0;
     virtual descriptorSetLayout& getDescriptorSetLayout() = 0;
-    virtual const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() = 0;
+    virtual std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() = 0;
 
 
 protected:

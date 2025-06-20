@@ -67,6 +67,7 @@ void shaderVulkan::LoadShaders(const std::string &vertexPath, const std::string 
 
 void shaderVulkan::init()
 {
+    mcommandBuffer.emplace();
     mcommandPool.emplace(commandPool(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     LoadShaders(mVertexPath, mFragmentPath, mGeometryPath);
 
@@ -99,7 +100,7 @@ void shaderVulkan::init()
     auto Create = [this, &shaderStageCreateInfos_triangle] {
         graphicsPipelineCreateInfoPack pipelineCiPack;
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
-        pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
+        pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().value().get().pass;
 
 
         pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(material), VK_VERTEX_INPUT_RATE_VERTEX);
@@ -154,7 +155,7 @@ void shaderVulkan::init()
     graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
     Create();
 
-    mcommandPool.value().AllocateBuffers(mcommandBuffer);
+    mcommandPool.value().AllocateBuffers(mcommandBuffer.value());
     initForUniform();
 }
 
@@ -243,10 +244,10 @@ void shaderVulkan::cleanup() {
     if (mBackendType != VULKAN) return;
     graphicsBase::Base().WaitIdle();
     if (pipelineLayout_triangle) {
-        vkDestroyPipelineLayout(graphicsBase::Base().Device(), pipelineLayout_triangle, nullptr);
+        pipelineLayout_triangle.~pipelineLayout();
     }
     if (descriptorSetLayout_triangle) {
-        vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), descriptorSetLayout_triangle, nullptr);
+        descriptorSetLayout_triangle.~descriptorSetLayout();
     }
     if (mdescriptorPool) {
         mdescriptorPool->~descriptorPool();
@@ -268,19 +269,24 @@ void shaderVulkan::cleanup() {
         mHasTextureBuffer->~uniformBuffer();
         mHasTextureBuffer.reset();
     }
+    if (mcommandPool)
+    {
+        mcommandPool->~commandPool();
+        mcommandPool.reset();
+    }
     if (vert) {
-        vkDestroyShaderModule(graphicsBase::Base().Device(), vert, nullptr);
+        vert.~shaderModule();
     }
     if (frag) {
-        vkDestroyShaderModule(graphicsBase::Base().Device(), frag, nullptr);
+        frag.~shaderModule();
     }
     if (mfence) {
-        vkDestroyFence(graphicsBase::Base().Device(), mfence, nullptr);
+        mfence.~fence();
     }
     if (msemaphore_imageIsAvailable) {
-        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_imageIsAvailable, nullptr);
+        msemaphore_imageIsAvailable.~semaphore();
     }
     if (msemaphore_renderingIsOver) {
-        vkDestroySemaphore(graphicsBase::Base().Device(), msemaphore_renderingIsOver, nullptr);
+        msemaphore_renderingIsOver.~semaphore();
     }
 }

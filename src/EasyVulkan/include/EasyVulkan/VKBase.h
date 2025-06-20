@@ -1442,11 +1442,15 @@ namespace vulkan {
 		imageView(VkImage image, VkImageViewType viewType, VkFormat format, const VkImageSubresourceRange& subresourceRange, VkImageViewCreateFlags flags = 0) {
 			Create(image, viewType, format, subresourceRange, flags);
 		}
-		imageView(imageView&& other) noexcept { MoveHandle; }
+		imageView(imageView&& other) noexcept { mCalledCreate = other.mCalledCreate; MoveHandle; }
 		~imageView() {
             // std::cout << "11111\n" ;
             // if(!mCalledCreate)std::cout << "33333\n";
-			if(mCalledCreate)
+			if(handle != VK_NULL_HANDLE && !mCalledCreate)
+			{
+				std::cout << "111\n";
+			}
+			if(handle != VK_NULL_HANDLE)
             DestroyHandleBy(vkDestroyImageView);
             // std::cout << "2222\n";
         }
@@ -1733,6 +1737,7 @@ namespace vulkan {
 				outStream << std::format("[ commandBuffer ] ERROR\nFailed to end a command buffer!\nError code: {}\n", int32_t(result));
 			return result;
 		}
+
 	};
 	class commandPool {
 		VkCommandPool handle = VK_NULL_HANDLE;
