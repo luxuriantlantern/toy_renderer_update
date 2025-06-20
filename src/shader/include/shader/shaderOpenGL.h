@@ -77,8 +77,9 @@ public:
     descriptorSetLayout& getDescriptorSetLayout() override {
         throw std::logic_error("OpenGL backend does not support getDescriptorSetLayout");
     }
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() override {
-        throw std::logic_error("OpenGL backend does not support RenderPassAndFramebuffers");
+    void addrpfw(std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf1) override
+    {
+        throw std::logic_error("OpenGL backend does not support addrpfw");
     }
 
 private:

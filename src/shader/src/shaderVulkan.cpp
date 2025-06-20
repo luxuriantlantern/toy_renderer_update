@@ -100,7 +100,7 @@ void shaderVulkan::init()
     auto Create = [this, &shaderStageCreateInfos_triangle] {
         graphicsPipelineCreateInfoPack pipelineCiPack;
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
-        pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().value().get().pass;
+        pipelineCiPack.createInfo.renderPass = rpwf.value().value().get().pass;
 
 
         pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(material), VK_VERTEX_INPUT_RATE_VERTEX);
