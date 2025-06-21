@@ -291,7 +291,12 @@ namespace vulkan {
         class StagingBufferMainThreadClass {
             stagingBuffer* pointer;
 
-            static stagingBuffer* Create() {
+            stagingBuffer* Create() {
+                static stagingBuffer stagingBuffer;
+                graphicsBase::Base().AddCallback_DestroyDevice([] { stagingBuffer.~stagingBuffer(); });
+                return &stagingBuffer;
+            }
+            stagingBuffer* Create2() {
                 static stagingBuffer stagingBuffer;
                 graphicsBase::Base().AddCallback_DestroyDevice([] { stagingBuffer.~stagingBuffer(); });
                 return &stagingBuffer;
@@ -307,6 +312,9 @@ namespace vulkan {
                 pointer = Create();
                 return *this;
             }
+            void reCreate(){
+                pointer = Create2();
+            }
         };
         inline static StagingBufferMainThreadClass stagingBuffer_mainThread{};
     protected:
@@ -314,6 +322,9 @@ namespace vulkan {
         VkDeviceSize memoryUsage = 0;
         image aliasedImage;
     public:
+        void reCreate() {
+            stagingBuffer_mainThread.reCreate();
+        }
         stagingBuffer() = default;
         stagingBuffer(VkDeviceSize size) {
             Expand(size);

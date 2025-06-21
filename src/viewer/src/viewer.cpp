@@ -252,7 +252,6 @@ void Viewer::switchBackend()
             return;
         }
     } else {
-        graphicsBase::Plus().cleanup();
         if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
             std::cerr << "无法创建 Vulkan 窗口，后端切换失败" << std::endl;
             return;
@@ -296,6 +295,9 @@ void Viewer::cleanupVulkan() {
         mCurrentRender->resetRPWF();
         mCurrentRender->cleanup();
         graphicsBase::Base().cleanup();
+        graphicsBase::Plus().cleanup();
+        vulkan::stagingBuffer i;
+        i.reCreate();
     }
 
 }
