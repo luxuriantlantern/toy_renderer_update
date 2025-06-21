@@ -36,10 +36,7 @@ public:
     void LoadShaders(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
     void use() override  {return;}
     void init() override;
-    void addrpfw(std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf1) override
-    {
-        this->rpwf = rpwf1;
-    }
+
 
 
     struct vertex {
@@ -85,6 +82,11 @@ public:
     pipeline& getPipeline() override { return pipeline_triangle; }
     descriptorSetLayout& getDescriptorSetLayout() override { return descriptorSetLayout_triangle; }
 
+     const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() override {
+        static const auto& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
+        return rpwf;
+    }
+
 private:
     shaderModule vert, frag, geom;
     uint32_t stageCount = 0;
@@ -106,8 +108,6 @@ private:
     void initForUniform();
     std::optional<texture2d> dummyTexture;
     std::optional<sampler> msampler;
-
-    std::optional<std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>>> rpwf;
 
     fence mfence;
     semaphore msemaphore_imageIsAvailable;

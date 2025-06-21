@@ -100,7 +100,7 @@ void shaderVulkan::init()
     auto Create = [this, &shaderStageCreateInfos_triangle] {
         graphicsPipelineCreateInfoPack pipelineCiPack;
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
-        pipelineCiPack.createInfo.renderPass = rpwf.value().value().get().pass;
+        pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().pass;
 
 
         pipelineCiPack.vertexInputBindings.emplace_back(0, sizeof(material), VK_VERTEX_INPUT_RATE_VERTEX);
@@ -244,10 +244,10 @@ void shaderVulkan::cleanup() {
     if (mBackendType != VULKAN) return;
     graphicsBase::Base().WaitIdle();
     if (pipelineLayout_triangle) {
-        pipelineLayout_triangle.~pipelineLayout();
+        pipelineLayout_triangle.cleanup();
     }
     if (descriptorSetLayout_triangle) {
-        descriptorSetLayout_triangle.~descriptorSetLayout();
+        descriptorSetLayout_triangle.cleanup();
     }
     if (mdescriptorPool) {
         mdescriptorPool->~descriptorPool();
@@ -275,10 +275,10 @@ void shaderVulkan::cleanup() {
         mcommandPool.reset();
     }
     if (vert) {
-        vert.~shaderModule();
+        vert.cleanup();
     }
     if (frag) {
-        frag.~shaderModule();
+        frag.cleanup();
     }
     if (mfence) {
         mfence.~fence();

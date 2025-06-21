@@ -28,12 +28,6 @@ public:
     SHADER_TYPE getShaderType() const override {
         return mCurrentShader.first;
     }
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() override {
-        throw std::logic_error("OpenGL backend does not support RenderPassAndFramebuffers");
-    }
-    void resetRPWF() override {
-        throw std::logic_error("OpenGL backend does not support resetRPWF");
-    }
 
 private:
     struct OpenGLModelResources {

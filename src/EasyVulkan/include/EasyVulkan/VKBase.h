@@ -250,7 +250,24 @@ namespace vulkan {
 			container.push_back(name);
 		}
 	public:
-		static void cleanup() { singleton.~graphicsBase(); new(&singleton) graphicsBase(); }
+		void cleanup() {
+            if (swapchain) {
+                for (auto &i: callbacks_destroySwapchain)
+                    i(), WaitIdle();
+                for (auto &i: swapchainImageViews)
+                    if (i)
+                        vkDestroyImageView(device, i, nullptr);
+                vkDestroySwapchainKHR(device, swapchain, nullptr);
+                swapchain = VK_NULL_HANDLE;
+                callbacks_createSwapchain.clear();
+                callbacks_destroySwapchain.clear();
+                swapchainImageViews.clear();
+            }
+            if (surface) {
+                vkDestroySurfaceKHR(instance, surface, nullptr);
+                surface = VK_NULL_HANDLE;
+            }
+        }
 		//Getter
 		uint32_t ApiVersion() const {
 			return apiVersion;
@@ -1515,6 +1532,7 @@ namespace vulkan {
 		}
 		shaderModule(shaderModule&& other) noexcept { MoveHandle; }
 		~shaderModule() { DestroyHandleBy(vkDestroyShaderModule); }
+        void cleanup() { DestroyHandleBy(vkDestroyShaderModule); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1568,6 +1586,7 @@ namespace vulkan {
 		}
 		descriptorSetLayout(descriptorSetLayout&& other) noexcept { MoveHandle; }
 		~descriptorSetLayout() { DestroyHandleBy(vkDestroyDescriptorSetLayout); }
+        void cleanup() { DestroyHandleBy(vkDestroyDescriptorSetLayout); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1589,6 +1608,7 @@ namespace vulkan {
 		}
 		pipelineLayout(pipelineLayout&& other) noexcept { MoveHandle; }
 		~pipelineLayout() { DestroyHandleBy(vkDestroyPipelineLayout); }
+        void cleanup() { DestroyHandleBy(vkDestroyPipelineLayout); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;

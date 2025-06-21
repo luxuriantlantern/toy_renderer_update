@@ -52,7 +52,7 @@ public:
     virtual pipeline& getPipeline() = 0;
     virtual uniformBuffer& getHasTextureBuffer() = 0;
     virtual descriptorSetLayout& getDescriptorSetLayout() = 0;
-    virtual void addrpfw(std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf1) = 0;
+    virtual const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() = 0;
 
 protected:
     SHADER_TYPE mShaderType;
