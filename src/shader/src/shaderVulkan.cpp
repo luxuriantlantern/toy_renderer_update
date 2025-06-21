@@ -290,3 +290,28 @@ void shaderVulkan::cleanup() {
         msemaphore_renderingIsOver.~semaphore();
     }
 }
+
+class BackendBase{
+
+};
+
+class OpenglBackend : public BackendBase {};
+class VulkanBackend : public BackendBase {};
+
+class ShaderBase{};
+
+class OpenglShader : public ShaderBase {
+public:
+    OpenglShader(BackendBase* bb){
+        auto ob = reinterpret_cast<OpenglBackend*>(bb);
+        // TODO: Initialize OpenGL shader with ob
+    }
+};
+
+class VulkanShader : public ShaderBase {
+public:
+    VulkanShader(BackendBase* bb){
+        auto vb = reinterpret_cast<VulkanBackend*>(bb);
+        // TODO: Initialize OpenGL shader with ob
+    }
+};
