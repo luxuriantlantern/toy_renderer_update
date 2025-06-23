@@ -19,9 +19,9 @@
 namespace vulkan {
     class commandPool {
         VkCommandPool handle = VK_NULL_HANDLE;
-        std::shared_ptr<VkDevice> mDevice = nullptr;
+        VkDevice * mDevice = nullptr;
     public:
-        explicit commandPool(std::shared_ptr<VkDevice> device) : mDevice(std::move(device)) {}
+        explicit commandPool(VkDevice *device) : mDevice(std::move(device)) {}
         commandPool(VkCommandPoolCreateInfo& createInfo) {
             Create(createInfo);
         }

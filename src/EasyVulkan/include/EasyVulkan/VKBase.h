@@ -4,7 +4,6 @@
 #include "VkResultT.h"
 #include <new>
 #include <memory>
-#include <move>
 #define VK_RESULT_THROW
 
 #include "VkUtil.h"
@@ -25,6 +24,7 @@ namespace vulkan {
 	class graphicsBasePlus;//Forward declaration
 
 	class graphicsBase {
+    protected:
 		uint32_t apiVersion = VK_API_VERSION_1_0;
 		VkInstance instance;
 		VkPhysicalDevice physicalDevice;
@@ -64,6 +64,7 @@ namespace vulkan {
 //		Static
 //		static graphicsBase singleton;
 		//--------------------
+    public:
 		graphicsBase() {
             this->AddCallback_CreateDevice(std::bind(Initialize, this, std::ref(pPlus)));
 			this->AddCallback_DestroyDevice(std::bind(Cleanup, this, std::ref(pPlus)));
@@ -71,25 +72,25 @@ namespace vulkan {
 
         void Initialize(graphicsBasePlus &gbp) {
             if (this->QueueFamilyIndex_Graphics() != VK_QUEUE_FAMILY_IGNORED) {
-                gbp.commandPool_graphics.Create(this->QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-                gbp.commandPool_graphics.AllocateBuffers(gbp.commandBuffer_transfer);
+                gbp.commandPool_graphics->Create(this->QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+                gbp.commandPool_graphics->AllocateBuffers(*gbp.commandBuffer_transfer);
             }
             if (this->QueueFamilyIndex_Compute() != VK_QUEUE_FAMILY_IGNORED)
-                gbp.commandPool_compute.Create(this->QueueFamilyIndex_Compute(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+                gbp.commandPool_compute->Create(this->QueueFamilyIndex_Compute(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
             if (this->QueueFamilyIndex_Presentation() != VK_QUEUE_FAMILY_IGNORED &&
                 this->QueueFamilyIndex_Presentation() != this->QueueFamilyIndex_Graphics() &&
                 this->SwapchainCreateInfo().imageSharingMode == VK_SHARING_MODE_EXCLUSIVE) {
-                gbp.commandPool_presentation.Create(this->QueueFamilyIndex_Presentation(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-                gbp.commandPool_presentation.AllocateBuffers(gbp.commandBuffer_presentation);
+                gbp.commandPool_presentation->Create(this->QueueFamilyIndex_Presentation(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+                gbp.commandPool_presentation->AllocateBuffers(*gbp.commandBuffer_presentation);
             }
             for (size_t i = 0; i < std::size(gbp.formatProperties); i++)
                 vkGetPhysicalDeviceFormatProperties(this->PhysicalDevice(), VkFormat(i), &gbp.formatProperties[i]);
         }
 
         void Cleanup(graphicsBasePlus &gbp) {
-            gbp.commandPool_graphics.~commandPool();
-            gbp.commandPool_presentation.~commandPool();
-            gbp.commandPool_compute.~commandPool();
+            gbp.commandPool_graphics->~commandPool();
+            gbp.commandPool_presentation->~commandPool();
+            gbp.commandPool_compute->~commandPool();
         }
 		graphicsBase(graphicsBase&&) = delete;
         ~graphicsBase() {
@@ -965,7 +966,7 @@ namespace vulkan {
                 outStream << std::format("[ semaphore ] ERROR\nFailed to create a semaphore!\nError code: {}\n", int32_t(result));
 		}
 		explicit semaphore(VkDevice *device ) : semaphore(device, {}){}
-		semaphore(semaphore&& other) noexcept { handle = other.handle; other.handle = VK_NULL_HANDLE; mDevice = std::move(other.mDevice) }
+		semaphore(semaphore&& other) noexcept { handle = other.handle; other.handle = VK_NULL_HANDLE; mDevice = std::move(other.mDevice); }
 		~semaphore() { if (handle) { vkDestroySemaphore(*mDevice, handle, nullptr); handle = VK_NULL_HANDLE; }}
 		//Getter
         operator decltype(handle)() const { return handle; };
@@ -1074,6 +1075,7 @@ namespace vulkan {
 	};
 
 	class deviceMemory {
+    protected:
 		VkDeviceMemory handle = VK_NULL_HANDLE;
 		VkDeviceSize allocationSize = 0;
 		VkMemoryPropertyFlags memoryProperties = 0;
@@ -1110,21 +1112,15 @@ namespace vulkan {
                      VkMemoryAllocateInfo&& allocateInfo): mDevice(std::move(device)),
                                                            mPhysicalDeviceProperties(std::move(physicalDeviceProperties)),
                                                            mPhysicalDeviceMemoryProperties(std::move(physicalDeviceMemoryProperties)) {
-            if (allocateInfo.memoryTypeIndex >= (*mPhysicalDeviceMemoryProperties).memoryTypeCount) {
-                outStream << std::format("[ deviceMemory ] ERROR\nInvalid memory type index!\n");
-            }
-            allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            if (VkResult result = vkAllocateMemory(*mDevice, &allocateInfo, nullptr, &handle)) {
-                outStream << std::format("[ deviceMemory ] ERROR\nFailed to allocate memory!\nError code: {}\n", int32_t(result));
-            }
-            allocationSize = allocateInfo.allocationSize;
-            memoryProperties = (*mPhysicalDeviceMemoryProperties).memoryTypes[allocateInfo.memoryTypeIndex].propertyFlags;
+            if(Allocate(allocateInfo) != VK_SUCCESS)
+                throw std::runtime_error("[ deviceMemory ] ERROR\nFailed to allocate memory!");
 		}
 		deviceMemory(deviceMemory&& other) noexcept {
             mDevice = std::move(other.mDevice);
             mPhysicalDeviceProperties = std::move(other.mPhysicalDeviceProperties);
             mPhysicalDeviceMemoryProperties = std::move(other.mPhysicalDeviceMemoryProperties);
-			handle = other.handle; other.handle = VK_NULL_HANDLE;
+			handle = other.handle;
+            other.handle = VK_NULL_HANDLE;
 			allocationSize = other.allocationSize;
 			memoryProperties = other.memoryProperties;
 			other.allocationSize = 0;
@@ -1201,9 +1197,24 @@ namespace vulkan {
 			memcpy(pData_dst, pData_src, size_t(size));
 			return UnmapMemory(size, offset);
 		}
+        result_t Allocate(VkMemoryAllocateInfo& allocateInfo) {
+            if (allocateInfo.memoryTypeIndex >= mPhysicalDeviceMemoryProperties->memoryTypeCount) {
+                outStream << std::format("[ deviceMemory ] ERROR\nInvalid memory type index!\n");
+                return VK_RESULT_MAX_ENUM;
+            }
+            allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            if (VkResult result = vkAllocateMemory(*mDevice, &allocateInfo, nullptr, &handle)) {
+                outStream << std::format("[ deviceMemory ] ERROR\nFailed to allocate memory!\nError code: {}\n", int32_t(result));
+                return result;
+            }
+            allocationSize = allocateInfo.allocationSize;
+            memoryProperties = mPhysicalDeviceMemoryProperties->memoryTypes[allocateInfo.memoryTypeIndex].propertyFlags;
+            return VK_SUCCESS;
+        }
 	};
 	class buffer {
-		VkBuffer handle = VK_NULL_HANDLE;
+    protected:
+        VkBuffer handle = VK_NULL_HANDLE;
         VkDevice *mDevice = nullptr;
         VkPhysicalDeviceMemoryProperties *mPhysicalDeviceMemoryProperties = nullptr;
 	public:
@@ -1212,10 +1223,8 @@ namespace vulkan {
 		buffer(VkDevice* device,
                VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties,
                VkBufferCreateInfo&& createInfo) : mDevice(std::move(device)), mPhysicalDeviceMemoryProperties(std::move(physicalDeviceMemoryProperties)) {
-            createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            VkResult result = vkCreateBuffer(*mDevice, &createInfo, nullptr, &handle);
-            if (result)
-                outStream << std::format("[ buffer ] ERROR\nFailed to create a buffer!\nError code: {}\n", int32_t(result));
+            if (Create(std::move(createInfo)) != VK_SUCCESS)
+                throw std::runtime_error("[ buffer ] ERROR\nFailed to create a buffer!");
         }
 		buffer(buffer&& other) noexcept {
             handle = other.handle;
@@ -1251,13 +1260,27 @@ namespace vulkan {
 				outStream << std::format("[ buffer ] ERROR\nFailed to attach the memory!\nError code: {}\n", int32_t(result));
 			return result;
 		}
+        result_t Create(VkBufferCreateInfo&& createInfo) {
+            createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            VkResult result = vkCreateBuffer(*mDevice, &createInfo, nullptr, &handle);
+            if (result)
+                outStream << std::format("[ buffer ] ERROR\nFailed to create a buffer!\nError code: {}\n", int32_t(result));
+            return result;
+        }
 	};
 	class bufferMemory :buffer, deviceMemory {
 	public:
-		bufferMemory() = default;
-		bufferMemory(VkBufferCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
-			Create(createInfo, desiredMemoryProperties);
-		}
+		bufferMemory(VkDevice *device,
+                     VkPhysicalDeviceProperties *physicalDeviceProperties,
+                     VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties
+        ) : buffer(device, physicalDeviceMemoryProperties), deviceMemory(device, physicalDeviceProperties, physicalDeviceMemoryProperties) {}
+		bufferMemory(VkDevice *device,
+                     VkPhysicalDeviceProperties *physicalDeviceProperties,
+                     VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties,
+                     VkBufferCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties
+        ) : buffer(device, physicalDeviceMemoryProperties), deviceMemory(device, physicalDeviceProperties, physicalDeviceMemoryProperties){
+
+        }
 		bufferMemory(bufferMemory&& other) noexcept :
 			buffer(std::move(other)), deviceMemory(std::move(other)) {
 			areBound = other.areBound;
@@ -1278,14 +1301,14 @@ namespace vulkan {
 		using deviceMemory::BufferData;
 		using deviceMemory::RetrieveData;
 		//Non-const Function
-		result_t CreateBuffer(VkBufferCreateInfo& createInfo) {
-			return buffer::Create(createInfo);
+		result_t CreateBuffer(VkBufferCreateInfo&& createInfo) {
+			return buffer::Create(std::move(createInfo));
 		}
 		result_t AllocateMemory(VkMemoryPropertyFlags desiredMemoryProperties) {
 			VkMemoryAllocateInfo allocateInfo = MemoryAllocateInfo(desiredMemoryProperties);
-			if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount)
+			if (allocateInfo.memoryTypeIndex >= deviceMemory::mPhysicalDeviceMemoryProperties->memoryTypeCount)
 				return VK_RESULT_MAX_ENUM;
-			return Allocate(allocateInfo);
+			return deviceMemory::Allocate(allocateInfo);
 		}
 		result_t BindMemory() {
 			if (VkResult result = buffer::BindMemory(Memory()))
@@ -1293,16 +1316,17 @@ namespace vulkan {
 			areBound = true;
 			return VK_SUCCESS;
 		}
-		result_t Create(VkBufferCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
+		result_t Create(VkBufferCreateInfo&& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
 			VkResult result;
 			false ||
-				(result = CreateBuffer(createInfo)) ||
+				(result = CreateBuffer(std::move(createInfo))) ||
 				(result = AllocateMemory(desiredMemoryProperties)) ||
 				(result = BindMemory());
 			return result;
 		}
 	};
 	class image {
+    protected:
 		VkImage handle = VK_NULL_HANDLE;
         VkDevice* mDevice = nullptr;
         VkPhysicalDeviceMemoryProperties *mPhysicalDeviceMemoryProperties = nullptr;
@@ -1312,10 +1336,8 @@ namespace vulkan {
 		image(VkDevice *device,
               VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties,
               VkImageCreateInfo&& createInfo) : mDevice(std::move(device)), mPhysicalDeviceMemoryProperties(std::move(physicalDeviceMemoryProperties)) {
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            VkResult result = vkCreateImage(*mDevice, &createInfo, nullptr, &handle);
-            if (result)
-                outStream << std::format("[ image ] ERROR\nFailed to create an image!\nError code: {}\n", int32_t(result));
+            if(Create(std::move(createInfo)) != VK_SUCCESS)
+                throw std::runtime_error("[ image ] ERROR\nFailed to create an image!");
         }
 		image(image&& other) noexcept { handle = other.handle; other.handle = VK_NULL_HANDLE; mDevice = std::move(other.mDevice); mPhysicalDeviceMemoryProperties = std::move(other.mPhysicalDeviceMemoryProperties); }
 		~image() { if (handle) { vkDestroyImage(*mDevice, handle, nullptr); handle = VK_NULL_HANDLE; }}
@@ -1350,12 +1372,29 @@ namespace vulkan {
 				outStream << std::format("[ image ] ERROR\nFailed to attach the memory!\nError code: {}\n", int32_t(result));
 			return result;
 		}
+        result_t Create(VkImageCreateInfo&& createInfo) {
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            VkResult result = vkCreateImage(*mDevice, &createInfo, nullptr, &handle);
+            if (result)
+                outStream << std::format("[ image ] ERROR\nFailed to create an image!\nError code: {}\n", int32_t(result));
+            return result;
+        }
 	};
 	class imageMemory :image, deviceMemory {
 	public:
-		imageMemory() = default;
-		imageMemory(VkImageCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
-			Create(createInfo, desiredMemoryProperties);
+		imageMemory(
+                    VkDevice* device,
+                    VkPhysicalDeviceProperties *physicalDeviceProperties,
+                    VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties
+        ) : image(device, physicalDeviceMemoryProperties), deviceMemory(device, physicalDeviceProperties, physicalDeviceMemoryProperties) {}
+		imageMemory(
+                    VkDevice* device,
+                    VkPhysicalDeviceProperties *physicalDeviceProperties,
+                    VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties,
+                    VkImageCreateInfo&& createInfo,
+                    VkMemoryPropertyFlags desiredMemoryProperties
+        ) : image(device, physicalDeviceMemoryProperties), deviceMemory(device, physicalDeviceProperties, physicalDeviceMemoryProperties) {
+			Create(std::move(createInfo), desiredMemoryProperties);
 		}
 		imageMemory(imageMemory&& other) noexcept :
 			image(std::move(other)), deviceMemory(std::move(other)) {
@@ -1372,14 +1411,14 @@ namespace vulkan {
 		using deviceMemory::AllocationSize;
 		using deviceMemory::MemoryProperties;
 		//Non-const Function
-		result_t CreateImage(VkImageCreateInfo& createInfo) {
-			return image::Create(createInfo);
+		result_t CreateImage(VkImageCreateInfo&& createInfo) {
+			return image::Create(std::move(createInfo));
 		}
 		result_t AllocateMemory(VkMemoryPropertyFlags desiredMemoryProperties) {
 			VkMemoryAllocateInfo allocateInfo = MemoryAllocateInfo(desiredMemoryProperties);
-			if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount)
+			if (allocateInfo.memoryTypeIndex >= deviceMemory::mPhysicalDeviceMemoryProperties->memoryTypeCount)
 				return VK_RESULT_MAX_ENUM;
-			return Allocate(allocateInfo);
+			return deviceMemory::Allocate(allocateInfo);
 		}
 		result_t BindMemory() {
 			if (VkResult result = image::BindMemory(Memory()))
@@ -1387,10 +1426,10 @@ namespace vulkan {
 			areBound = true;
 			return VK_SUCCESS;
 		}
-		result_t Create(VkImageCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
+		result_t Create(VkImageCreateInfo&& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
 			VkResult result;
 			false ||
-				(result = CreateImage(createInfo)) ||
+				(result = CreateImage(std::move(createInfo))) ||
 				(result = AllocateMemory(desiredMemoryProperties)) ||
 				(result = BindMemory());
 			return result;
