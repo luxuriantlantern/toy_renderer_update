@@ -5,8 +5,6 @@
 
 namespace vulkan {
 
-//	inline graphicsBasePlus graphicsBasePlus::singleton;
-	//Format Related
 	constexpr formatInfo FormatInfo(VkFormat format) {
 #ifndef NDEBUG
 		if (uint32_t(format) >= std::size(formatInfos_v1_0))
@@ -28,8 +26,8 @@ namespace vulkan {
 		}
 		return format_32BitFloat;
 	}
-	inline const VkFormatProperties& FormatProperties(VkFormat format) {
-		return graphicsBase::Plus().FormatProperties(format);
+	inline const VkFormatProperties& FormatProperties(graphicsBase *gb, VkFormat format) {
+		return gb->FormatProperties(format);
 	}
 
 	//Pipeline Related
@@ -139,9 +137,21 @@ namespace vulkan {
 	//Synchronization
 	class timelineSemaphore : semaphore {
 	public:
-		timelineSemaphore(uint64_t initialValue = 0) {
-			Create(initialValue);
-		}
+        timelineSemaphore(VkDevice *device,
+                          VkSemaphoreCreateInfo && createInfo) : semaphore(device, std::move(createInfo)) {}
+        timelineSemaphore(VkDevice *device, uint64_t initialValue = 0) : timelineSemaphore(device, [initialValue]() {
+            VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
+                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+                    .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+                    .initialValue = initialValue
+            };
+            VkSemaphoreCreateInfo createInfo = {
+                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+                    .pNext = &semaphoreTypeCreateInfo,
+                    .flags = 0 // 显式初始化 flags
+            };
+            return createInfo;
+        }()) {}
 		//Getter
 #ifndef NDEBUG
 		using semaphore::operator VkSemaphore;
@@ -151,7 +161,7 @@ namespace vulkan {
 		using semaphore::Address;
 		//Const Function
 		result_t Wait(uint64_t value) const {
-			return Wait(*this, value);
+			return Wait(mDevice, *this, value);
 		}
 		result_t Signal(uint64_t value = 0) const {
 			VkSemaphoreSignalInfo signalInfo = {
@@ -159,31 +169,19 @@ namespace vulkan {
 				.semaphore = *this,
 				.value = value
 			};
-			VkResult result = vkSignalSemaphore(graphicsBase::Base().Device(), &signalInfo);
+			VkResult result = vkSignalSemaphore(*mDevice, &signalInfo);
 			if (result)
 				outStream << std::format("[ timelineSemaphore ] ERROR\nFailed to signal the semaphore!\nError code: {}\n", int32_t(result));
 			return result;
 		}
 		result_t GetValue(uint64_t& value) const {
-			VkResult result = vkGetSemaphoreCounterValue(graphicsBase::Base().Device(), *this, &value);
+			VkResult result = vkGetSemaphoreCounterValue(*mDevice, *this, &value);
 			if (result)
 				outStream << std::format("[ timelineSemaphore ] ERROR\nFailed to get the counter value of the semaphore!\nError code: {}\n", int32_t(result));
 			return result;
 		}
-		//Non-const Function
-		result_t Create(uint64_t initialValue = 0) {
-			VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
-				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-				.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
-				.initialValue = initialValue
-			};
-			VkSemaphoreCreateInfo createInfo = {
-				.pNext = &semaphoreTypeCreateInfo
-			};
-			return semaphore::Create(createInfo);
-		}
 		//Static Functino
-		static result_t Wait(arrayRef<const timelineSemaphore> semaphores, arrayRef<uint64_t> values, bool waitAll = true) {
+		static result_t Wait(VkDevice *device, arrayRef<const timelineSemaphore> semaphores, arrayRef<uint64_t> values, bool waitAll = true) {
 			if (semaphores.Count() != values.Count())
 				if (semaphores.Count() < values.Count()) {
 					outStream << std::format("[ timelineSemaphore ] ERROR\nFor each semaphore, must provide a corresponding counter value!\n");
@@ -198,7 +196,7 @@ namespace vulkan {
 				.pSemaphores = semaphores[0].Address(),
 				.pValues = values.Pointer()
 			};
-			VkResult result = vkWaitSemaphores(graphicsBase::Base().Device(), &waitInfo, UINT64_MAX);
+			VkResult result = vkWaitSemaphores(*device, &waitInfo, UINT64_MAX);
 			if (result)
 				outStream << std::format("[ timelineSemaphore ] ERROR\nFailed to wait for semaphores!\nError code: {}\n", int32_t(result));
 			return result;
