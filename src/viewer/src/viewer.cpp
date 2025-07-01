@@ -77,6 +77,7 @@ void Viewer::initBackend() {
             return;
         }
 
+
     }
 }
 
@@ -91,7 +92,7 @@ void Viewer::initBackendVulkanImGUI()
     init_info.Queue = graphicsBase::Base().getGraphicsQueue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = mImGuiDescriptorPool;
-    init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().pass;
+    init_info.RenderPass = mCurrentRender->RenderPassAndFramebuffers().value().get().pass;
     init_info.Subpass = 0;
     init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
     init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
@@ -182,9 +183,9 @@ void Viewer::mainloop()
         }
         else {
             auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer().value();
-            auto &rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
+            auto rpwf = mCurrentRender->RenderPassAndFramebuffers();
             ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
-            rpwf.pass.CmdEnd(CommandBuffer);
+            rpwf.value().get().pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
             auto shader = mCurrentRender->getCurrentShader();
             fence &Fence = shader->getFence();
@@ -262,7 +263,6 @@ void Viewer::switchBackend()
 
     initBackend();
 
-
     if (mCurrentRender) {
         mCurrentRender->init();
         mCurrentRender->setup(mScene);
@@ -287,13 +287,17 @@ void Viewer::cleanupVulkan() {
             auto shader = shaders.second;
             shader->cleanup();
         }
-//        auto& rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
-//        rpwf.pass.~renderPass();
-//        for(auto& framebuffer : rpwf.framebuffers) {
-//            framebuffer.~framebuffer();
-//        }
+        auto rpwf = mCurrentRender->RenderPassAndFramebuffers();
+        rpwf.value().get().pass.~renderPass();
+        for(auto& framebuffer : rpwf.value().get().framebuffers) {
+            framebuffer.~framebuffer();
+        }
+        mCurrentRender->resetRPWF();
         mCurrentRender->cleanup();
         graphicsBase::Base().cleanup();
+        graphicsBase::Plus().cleanup();
+        vulkan::stagingBuffer i;
+        i.reCreate();
     }
 
 }
