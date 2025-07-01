@@ -149,7 +149,7 @@ namespace easyVulkan{
 		};
 		CreateFramebuffers();
 
-//		ExecuteOnce(rpwf);
+		ExecuteOnce(rpwf);
 		graphicsBase::Base().AddCallback_CreateSwapchain(CreateFramebuffers);
 		graphicsBase::Base().AddCallback_DestroySwapchain(DestroyFramebuffers);
 		return rpwf;
