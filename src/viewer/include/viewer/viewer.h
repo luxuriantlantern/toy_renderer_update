@@ -55,15 +55,12 @@ public:
         mCurrentRender->init();
         mCurrentRender->setup(mScene);
         initBackend();
-        if(mShaderBackendType == SHADER_BACKEND_TYPE::VULKAN)
-            initBackendVulkanImGUI();
     };
     ~Viewer();
 
     void initWindow(const std::string& title);
     void setWindow(GLFWwindow* window) { mWindow = window; }
     void initBackend();
-    void initBackendVulkanImGUI();
     void mainloop();
     void switchBackend();
     void processInput(GLFWwindow* window);
