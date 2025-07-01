@@ -92,7 +92,7 @@ void Viewer::initBackendVulkanImGUI()
     init_info.Queue = graphicsBase::Base().getGraphicsQueue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = mImGuiDescriptorPool;
-    init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().value().get().pass;
+    init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().pass;
     init_info.Subpass = 0;
     init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
     init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
@@ -182,10 +182,10 @@ void Viewer::mainloop()
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);
         }
         else {
-            auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer().value();
-            auto rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
+            auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer();
+            auto &rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
             ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
-            rpwf.value().get().pass.CmdEnd(CommandBuffer);
+            rpwf.pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
             auto shader = mCurrentRender->getCurrentShader();
             fence &Fence = shader->getFence();
@@ -283,17 +283,12 @@ void Viewer::cleanupVulkan() {
     if(mCurrentRender)
     {
         graphicsBase::Base().WaitIdle();
+        mCurrentRender->cleanup();
         for(auto& shaders : mCurrentRender->getShaders()) {
             auto shader = shaders.second;
             shader->cleanup();
+
         }
-        auto rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
-        rpwf.value().get().pass.~renderPass();
-        for(auto& framebuffer : rpwf.value().get().framebuffers) {
-            framebuffer.~framebuffer();
-        }
-        rpwf.reset();
-        mCurrentRender->cleanup();
         graphicsBase::Base().cleanup();
     }
 

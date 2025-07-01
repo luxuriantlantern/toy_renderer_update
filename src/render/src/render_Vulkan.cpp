@@ -178,14 +178,14 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
     graphicsBase::Base().SwapImage(shader->getSemaphoreImageIsAvailable());
     auto i = graphicsBase::Base().CurrentImageIndex();
 
-    commandBuffer &CommandBuffer = shader->getCommandBuffer().value();
+    commandBuffer &CommandBuffer = shader->getCommandBuffer();
 
     CommandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearValue clearValues[2];
     std::memcpy(clearValues, shader->getClearValue(), sizeof(clearValues));
-    auto rpwf = shader->RenderPassAndFramebuffers().value();
-    rpwf.get().pass.CmdBegin(CommandBuffer, rpwf.get().framebuffers[i], {{}, windowSize}, clearValues);
+    auto &rpwf = shader->RenderPassAndFramebuffers();
+    rpwf.pass.CmdBegin(CommandBuffer, rpwf.framebuffers[i], {{}, windowSize}, clearValues);
 
     for (const auto& model : models) {
         shaderVulkan::uniformBufferObject ubo{};

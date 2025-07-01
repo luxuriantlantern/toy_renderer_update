@@ -50,7 +50,7 @@ public:
 //    std::vector<framebuffer>& getFramebuffer() override {
 //        throw std::logic_error("OpenGL backend does not support getFramebuffer");
 //    }
-    std::optional<commandBuffer> & getCommandBuffer() override {
+    commandBuffer& getCommandBuffer() override {
         throw std::logic_error("OpenGL backend does not support getCommandBuffer");
     }
     fence& getFence() override {
@@ -77,7 +77,7 @@ public:
     descriptorSetLayout& getDescriptorSetLayout() override {
         throw std::logic_error("OpenGL backend does not support getDescriptorSetLayout");
     }
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() override {
+    const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() override {
         throw std::logic_error("OpenGL backend does not support RenderPassAndFramebuffers");
     }
 

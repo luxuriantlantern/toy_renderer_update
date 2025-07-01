@@ -37,10 +37,8 @@ public:
     void use() override  {return;}
     void init() override;
 
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() override {
-        if (!rpwf) {
-            rpwf = std::ref(easyVulkan::CreateRpwf_ScreenWithDS());
-        }
+    const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() override {
+        static const auto& rpwf = easyVulkan::CreateRpwf_ScreenWithDS();
         return rpwf;
     }
 
@@ -78,7 +76,7 @@ public:
     semaphore& getSemaphoreImageIsAvailable() override { return msemaphore_imageIsAvailable; }
     uniformBuffer& getUniformBuffer() override { return *muniformBuffer; }
     uniformBuffer& getHasTextureBuffer() override { return *mHasTextureBuffer; }
-    std::optional<commandBuffer> & getCommandBuffer() override { return mcommandBuffer; }
+    commandBuffer& getCommandBuffer() override { return mcommandBuffer; }
     fence& getFence() override { return mfence; }
     semaphore& getSemaphoreRenderingIsOver() override { return msemaphore_renderingIsOver; }
     VkClearValue* getClearValue() override { return mclearValue; }
@@ -100,7 +98,6 @@ private:
     std::optional<descriptorPool> mdescriptorPool;
 
     descriptorSet mdescriptorSet_triangle;
-    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf;
 
     VkClearValue mclearValue[2] = {
             { .color = { 0.f, 0.f, 0.f, 1.f } },
@@ -113,7 +110,7 @@ private:
     fence mfence;
     semaphore msemaphore_imageIsAvailable;
     semaphore msemaphore_renderingIsOver;
-    std::optional<commandBuffer> mcommandBuffer;
+    commandBuffer mcommandBuffer;
     std::optional<commandPool> mcommandPool;
 };
 
