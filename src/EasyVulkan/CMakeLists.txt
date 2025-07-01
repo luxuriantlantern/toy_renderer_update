@@ -1,12 +1,8 @@
 add_library(EASY_VULKAN
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VkUtil.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VkResultT.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/EasyVKStart.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VkCommandBuffer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/easyVulkan.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/GlfwGeneral.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VKBase.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VkGraphicsBasePlus.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VKBase+.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/EasyVulkan/VKFormat.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/GlfwGeneral.cpp

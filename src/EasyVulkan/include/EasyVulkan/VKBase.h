@@ -1,13 +1,12 @@
 #pragma once
 #include "EasyVKStart.h"
-#include "VkGraphicsBasePlus.h"
-#include "VkResultT.h"
 #include <new>
-#include <memory>
-#include <move>
 #define VK_RESULT_THROW
 
-#include "VkUtil.h"
+#define DestroyHandleBy(Func) if (handle) { Func(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; }
+#define MoveHandle handle = other.handle; other.handle = VK_NULL_HANDLE;
+#define DefineHandleTypeOperator operator decltype(handle)() const { return handle; }
+#define DefineAddressFunction const decltype(handle)* Address() const { return &handle; }
 
 #ifndef NDEBUG
 #define ENABLE_DEBUG_MESSENGER true
@@ -21,6 +20,41 @@
 
 namespace vulkan {
 	constexpr VkExtent2D defaultWindowSize = { 1280, 720 };
+	inline auto& outStream = std::cout;
+
+#ifdef VK_RESULT_THROW
+	class result_t {
+		VkResult result;
+	public:
+		static void(*callback_throw)(VkResult);
+		result_t(VkResult result) :result(result) {}
+		result_t(result_t&& other) noexcept :result(other.result) { other.result = VK_SUCCESS; }
+		~result_t() noexcept(false) {
+			if (uint32_t(result) < VK_RESULT_MAX_ENUM)
+				return;
+			if (callback_throw)
+				callback_throw(result);
+			throw result;
+		}
+		operator VkResult() {
+			VkResult result = this->result;
+			this->result = VK_SUCCESS;
+			return result;
+		}
+	};
+	inline void(*result_t::callback_throw)(VkResult);
+
+#elif defined VK_RESULT_NODISCARD
+	struct [[nodiscard]] result_t {
+		VkResult result;
+		result_t(VkResult result) :result(result) {}
+		operator VkResult() const { return result; }
+	};
+#pragma warning(disable:4834)
+#pragma warning(disable:6031)
+#else
+	using result_t = VkResult;
+#endif
 
 	class graphicsBasePlus;//Forward declaration
 
@@ -33,7 +67,6 @@ namespace vulkan {
 		std::vector<VkPhysicalDevice> availablePhysicalDevices;
 
 		VkDevice device;
-        std::shared_ptr<VkDevice> mDevice;
 		uint32_t queueFamilyIndex_graphics = VK_QUEUE_FAMILY_IGNORED;
 		uint32_t queueFamilyIndex_presentation = VK_QUEUE_FAMILY_IGNORED;
 		uint32_t queueFamilyIndex_compute = VK_QUEUE_FAMILY_IGNORED;
@@ -61,37 +94,11 @@ namespace vulkan {
 		std::vector<void(*)()> callbacks_createDevice;
 		std::vector<void(*)()> callbacks_destroyDevice;
 
-		graphicsBasePlus pPlus;//Pimpl
-//		Static
-//		static graphicsBase singleton;
+		graphicsBasePlus* pPlus = nullptr;//Pimpl
+		//Static
+		static graphicsBase singleton;
 		//--------------------
-		graphicsBase() {
-            this->AddCallback_CreateDevice(std::bind(Initialize, this, std::ref(pPlus)));
-			this->AddCallback_DestroyDevice(std::bind(Cleanup, this, std::ref(pPlus)));
-        }
-
-        void Initialize(graphicsBasePlus &gbp) {
-            if (this->QueueFamilyIndex_Graphics() != VK_QUEUE_FAMILY_IGNORED) {
-                gbp.commandPool_graphics.Create(this->QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-                gbp.commandPool_graphics.AllocateBuffers(gbp.commandBuffer_transfer);
-            }
-            if (this->QueueFamilyIndex_Compute() != VK_QUEUE_FAMILY_IGNORED)
-                gbp.commandPool_compute.Create(this->QueueFamilyIndex_Compute(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-            if (this->QueueFamilyIndex_Presentation() != VK_QUEUE_FAMILY_IGNORED &&
-                this->QueueFamilyIndex_Presentation() != this->QueueFamilyIndex_Graphics() &&
-                this->SwapchainCreateInfo().imageSharingMode == VK_SHARING_MODE_EXCLUSIVE) {
-                gbp.commandPool_presentation.Create(this->QueueFamilyIndex_Presentation(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-                gbp.commandPool_presentation.AllocateBuffers(gbp.commandBuffer_presentation);
-            }
-            for (size_t i = 0; i < std::size(gbp.formatProperties); i++)
-                vkGetPhysicalDeviceFormatProperties(this->PhysicalDevice(), VkFormat(i), &gbp.formatProperties[i]);
-        }
-
-        void Cleanup(graphicsBasePlus &gbp) {
-            gbp.commandPool_graphics.~commandPool();
-            gbp.commandPool_presentation.~commandPool();
-            gbp.commandPool_compute.~commandPool();
-        }
+		graphicsBase() = default;
 		graphicsBase(graphicsBase&&) = delete;
         ~graphicsBase() {
             if (!instance)
@@ -171,18 +178,18 @@ namespace vulkan {
 			return VK_SUCCESS;
 		}
 		result_t CreateSwapchain_Internal() {
-			if (VkResult result = vkCreateSwapchainKHR(*mDevice, &swapchainCreateInfo, nullptr, &swapchain)) {
+			if (VkResult result = vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain)) {
 				outStream << std::format("[ graphicsBase ] ERROR\nFailed to create a swapchain!\nError code: {}\n", int32_t(result));
 				return result;
 			}
 
 			uint32_t swapchainImageCount;
-			if (VkResult result = vkGetSwapchainImagesKHR(*mDevice, swapchain, &swapchainImageCount, nullptr)) {
+			if (VkResult result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr)) {
 				outStream << std::format("[ graphicsBase ] ERROR\nFailed to get the count of swapchain images!\nError code: {}\n", int32_t(result));
 				return result;
 			}
 			swapchainImages.resize(swapchainImageCount);
-			if (VkResult result = vkGetSwapchainImagesKHR(*mDevice, swapchain, &swapchainImageCount, swapchainImages.data())) {
+			if (VkResult result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data())) {
 				outStream << std::format("[ graphicsBase ] ERROR\nFailed to get swapchain images!\nError code: {}\n", int32_t(result));
 				return result;
 			}
@@ -197,7 +204,7 @@ namespace vulkan {
 			};
 			for (size_t i = 0; i < swapchainImageCount; i++) {
 				imageViewCreateInfo.image = swapchainImages[i];
-				if (VkResult result = vkCreateImageView(*mDevice, &imageViewCreateInfo, nullptr, &swapchainImageViews[i])) {
+				if (VkResult result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapchainImageViews[i])) {
 					outStream << std::format("[ graphicsBase ] ERROR\nFailed to create a swapchain image view!\nError code: {}\n", int32_t(result));
 					return result;
 				}
@@ -249,8 +256,8 @@ namespace vulkan {
                     i(), WaitIdle();
                 for (auto &i: swapchainImageViews)
                     if (i)
-                        vkDestroyImageView(*mDevice, i, nullptr);
-                vkDestroySwapchainKHR(*mDevice, swapchain, nullptr);
+                        vkDestroyImageView(device, i, nullptr);
+                vkDestroySwapchainKHR(device, swapchain, nullptr);
                 swapchain = VK_NULL_HANDLE;
                 callbacks_createSwapchain.clear();
                 callbacks_destroySwapchain.clear();
@@ -285,7 +292,7 @@ namespace vulkan {
 		}
 
 		VkDevice Device() const {
-			return *mDevice;
+			return device;
 		}
         VkQueue getGraphicsQueue() const {
             return queue_graphics;
@@ -351,7 +358,7 @@ namespace vulkan {
 
 		//Const Function
 		VkResult WaitIdle() const {
-			VkResult result = vkDeviceWaitIdle(*mDevice);
+			VkResult result = vkDeviceWaitIdle(device);
 			if (result)
 				outStream << std::format("[ graphicsBase ] ERROR\nFailed to wait for the device to be idle!\nError code: {}\n", int32_t(result));
 			return result;
@@ -577,16 +584,16 @@ namespace vulkan {
 				.ppEnabledExtensionNames = deviceExtensions.data(),
 				.pEnabledFeatures = &physicalDeviceFeatures
 			};
-			if (VkResult result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, mDevice.get())) {
+			if (VkResult result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) {
 				outStream << std::format("[ graphicsBase ] ERROR\nFailed to create a vulkan logical device!\nError code: {}\n", int32_t(result));
 				return result;
 			}
 			if (queueFamilyIndex_graphics != VK_QUEUE_FAMILY_IGNORED)
-				vkGetDeviceQueue(*mDevice, queueFamilyIndex_graphics, 0, &queue_graphics);
+				vkGetDeviceQueue(device, queueFamilyIndex_graphics, 0, &queue_graphics);
 			if (queueFamilyIndex_presentation != VK_QUEUE_FAMILY_IGNORED)
-				vkGetDeviceQueue(*mDevice, queueFamilyIndex_presentation, 0, &queue_presentation);
+				vkGetDeviceQueue(device, queueFamilyIndex_presentation, 0, &queue_presentation);
 			if (queueFamilyIndex_compute != VK_QUEUE_FAMILY_IGNORED)
-				vkGetDeviceQueue(*mDevice, queueFamilyIndex_compute, 0, &queue_compute);
+				vkGetDeviceQueue(device, queueFamilyIndex_compute, 0, &queue_compute);
 			vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 			vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
 			outStream << std::format("Renderer: {}\n", physicalDeviceProperties.deviceName);
@@ -761,7 +768,7 @@ namespace vulkan {
 			this->~graphicsBase();
 			instance = VK_NULL_HANDLE;
 			physicalDevice = VK_NULL_HANDLE;
-			*mDevice = VK_NULL_HANDLE;
+			device = VK_NULL_HANDLE;
 			surface = VK_NULL_HANDLE;
 			swapchain = VK_NULL_HANDLE;
 			swapchainImages.resize(0);
@@ -777,17 +784,17 @@ namespace vulkan {
 					i();
 				for (auto& i : swapchainImageViews)
 					if (i)
-						vkDestroyImageView(*mDevice, i, nullptr);
+						vkDestroyImageView(device, i, nullptr);
 				swapchainImageViews.resize(0);
-				vkDestroySwapchainKHR(*mDevice, swapchain, nullptr);
+				vkDestroySwapchainKHR(device, swapchain, nullptr);
 				swapchain = VK_NULL_HANDLE;
 				swapchainCreateInfo = {};
 			}
 			for (auto& i : callbacks_destroyDevice)
 				i();
-			if (*mDevice)
-				vkDestroyDevice(*mDevice, nullptr),
-				*mDevice = VK_NULL_HANDLE;
+			if (device)
+				vkDestroyDevice(device, nullptr),
+				device = VK_NULL_HANDLE;
 			return CreateDevice(flags);
 		}
 		result_t RecreateSwapchain() {
@@ -814,7 +821,7 @@ namespace vulkan {
 				i();
 			for (auto& i : swapchainImageViews)
 				if (i)
-					vkDestroyImageView(*mDevice, i, nullptr);
+					vkDestroyImageView(device, i, nullptr);
 			swapchainImageViews.resize(0);
 			if (result = CreateSwapchain_Internal())
 				return result;
@@ -825,10 +832,10 @@ namespace vulkan {
 		result_t SwapImage(VkSemaphore semaphore_imageIsAvailable) {
 			if (swapchainCreateInfo.oldSwapchain &&
 				swapchainCreateInfo.oldSwapchain != swapchain) {
-				vkDestroySwapchainKHR(*mDevice, swapchainCreateInfo.oldSwapchain, nullptr);
+				vkDestroySwapchainKHR(device, swapchainCreateInfo.oldSwapchain, nullptr);
 				swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 			}
-			while (VkResult result = vkAcquireNextImageKHR(*mDevice, swapchain, UINT64_MAX, semaphore_imageIsAvailable, VK_NULL_HANDLE, &currentImageIndex))
+			while (VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, semaphore_imageIsAvailable, VK_NULL_HANDLE, &currentImageIndex))
 				switch (result) {
 				case VK_SUBOPTIMAL_KHR:
 				case VK_ERROR_OUT_OF_DATE_KHR:
@@ -946,59 +953,66 @@ namespace vulkan {
 		}
 
 		//Static Function
-//		static graphicsBase& Base() {
-//			return singleton;
-//		}
-//		static graphicsBasePlus& Plus() { return *singleton.pPlus; }
-//		static void Plus(graphicsBasePlus& plus) { if (!singleton.pPlus) singleton.pPlus = &plus; }
+		static graphicsBase& Base() {
+			return singleton;
+		}
+		static graphicsBasePlus& Plus() { return *singleton.pPlus; }
+		static void Plus(graphicsBasePlus& plus) { if (!singleton.pPlus) singleton.pPlus = &plus; }
 	};
-//	inline graphicsBase graphicsBase::singleton;
+	inline graphicsBase graphicsBase::singleton;
 
 	class semaphore {
 		VkSemaphore handle = VK_NULL_HANDLE;
-        std::shared_ptr<VkDevice> mDevice = nullptr;
 	public:
 		//semaphore() = default;
-		explicit semaphore(std::shared_ptr<VkDevice> device, VkSemaphoreCreateInfo&& createInfo) : mDevice(std::move(device)) {
-            createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            VkResult result = vkCreateSemaphore(*mDevice, &createInfo, nullptr, &handle);
-            if (result)
-                outStream << std::format("[ semaphore ] ERROR\nFailed to create a semaphore!\nError code: {}\n", int32_t(result));
+		semaphore(VkSemaphoreCreateInfo& createInfo) {
+			Create(createInfo);
 		}
-		explicit semaphore(std::shared_ptr<VkDevice> device ) : semaphore(device, {}){}
+		semaphore(/*reserved for future use*/) {
+			Create();
+		}
 		semaphore(semaphore&& other) noexcept { MoveHandle; }
-		~semaphore() { if (handle) { vkDestroySemaphore(*mDevice, handle, nullptr); handle = VK_NULL_HANDLE; }}
+		~semaphore() { DestroyHandleBy(vkDestroySemaphore); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
 		//Non-const Function
+		result_t Create(VkSemaphoreCreateInfo& createInfo) {
+			createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			VkResult result = vkCreateSemaphore(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+			if (result)
+				outStream << std::format("[ semaphore ] ERROR\nFailed to create a semaphore!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t Create(/*reserved for future use*/) {
+			VkSemaphoreCreateInfo createInfo = {};
+			return Create(createInfo);
+		}
 	};
 	class fence {
 		VkFence handle = VK_NULL_HANDLE;
-        std::shared_ptr<VkDevice> mDevice = nullptr;
-    public:
+	public:
 		//fence() = default;
-		fence(std::shared_ptr<VkDevice> device, VkFenceCreateInfo&& createInfo) : mDevice(std::move(device)) {
-            createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            VkResult result = vkCreateFence(*mDevice, &createInfo, nullptr, &handle);
-            if (result)
-                outStream << std::format("[ fence ] ERROR\nFailed to create a fence!\nError code: {}\n", int32_t(result));
+		fence(VkFenceCreateInfo& createInfo) {
+			Create(createInfo);
 		}
-		fence(std::shared_ptr<VkDevice> device, VkFenceCreateFlags flags = 0): fence(device, {.flags=flags}) {}
+		fence(VkFenceCreateFlags flags = 0) {
+			Create(flags);
+		}
 		fence(fence&& other) noexcept { MoveHandle; }
-		~fence() { if (handle) { vkDestroyFence(*mDevice, handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~fence() { DestroyHandleBy(vkDestroyFence); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
 		//Const Function
 		result_t Wait() const {
-			VkResult result = vkWaitForFences(*mDevice, 1, &handle, false, UINT64_MAX);
+			VkResult result = vkWaitForFences(graphicsBase::Base().Device(), 1, &handle, false, UINT64_MAX);
 			if (result)
 				outStream << std::format("[ fence ] ERROR\nFailed to wait for the fence!\nError code: {}\n", int32_t(result));
 			return result;
 		}
 		result_t Reset() const {
-			VkResult result = vkResetFences(*mDevice, 1, &handle);
+			VkResult result = vkResetFences(graphicsBase::Base().Device(), 1, &handle);
 			if (result)
 				outStream << std::format("[ fence ] ERROR\nFailed to reset the fence!\nError code: {}\n", int32_t(result));
 			return result;
@@ -1009,26 +1023,38 @@ namespace vulkan {
 			return result;
 		}
 		result_t Status() const {
-			VkResult result = vkGetFenceStatus(*mDevice, handle);
+			VkResult result = vkGetFenceStatus(graphicsBase::Base().Device(), handle);
 			if (result < 0)
 				outStream << std::format("[ fence ] ERROR\nFailed to get the status of the fence!\nError code: {}\n", int32_t(result));
 			return result;
 		}
+		//Non-const Function
+		result_t Create(VkFenceCreateInfo& createInfo) {
+			createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+			VkResult result = vkCreateFence(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+			if (result)
+				outStream << std::format("[ fence ] ERROR\nFailed to create a fence!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t Create(VkFenceCreateFlags flags = 0) {
+			VkFenceCreateInfo createInfo = {
+				.flags = flags
+			};
+			return Create(createInfo);
+		}
 	};
 	class event {
 		VkEvent handle = VK_NULL_HANDLE;
-        std::shared_ptr<VkDevice> mDevice = nullptr;
-    public:
+	public:
 		//event() = default;
-		event(std::shared_ptr<VkDevice> device, VkEventCreateInfo&& createInfo) : mDevice(std::move(device)) {
-            createInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-            VkResult result = vkCreateEvent(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
-            if (result)
-                outStream << std::format("[ event ] ERROR\nFailed to create a event!\nError code: {}\n", int32_t(result));
+		event(VkEventCreateInfo& createInfo) {
+			Create(createInfo);
 		}
-		event(std::shared_ptr<VkDevice> device, VkEventCreateFlags flags = 0) : event(device, {.flags = flags}) {}
+		event(VkEventCreateFlags flags = 0) {
+			Create(flags);
+		}
 		event(event& other) noexcept { MoveHandle; }
-		~event() { if (handle) { vkDestroyEvent(*mDevice, handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~event() { DestroyHandleBy(vkDestroyEvent); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1055,22 +1081,36 @@ namespace vulkan {
 				imageMemoryBarriers.Count(), imageMemoryBarriers.Pointer());
 		}
 		result_t Set() const {
-			VkResult result = vkSetEvent(*mDevice, handle);
+			VkResult result = vkSetEvent(graphicsBase::Base().Device(), handle);
 			if (result)
 				outStream << std::format("[ event ] ERROR\nFailed to singal the event!\nError code: {}\n", int32_t(result));
 			return result;
 		}
 		result_t Reset() const {
-			VkResult result = vkResetEvent(*mDevice, handle);
+			VkResult result = vkResetEvent(graphicsBase::Base().Device(), handle);
 			if (result)
 				outStream << std::format("[ event ] ERROR\nFailed to unsingal the event!\nError code: {}\n", int32_t(result));
 			return result;
 		}
 		result_t Status() const {
-			VkResult result = vkGetEventStatus(*mDevice, handle);
+			VkResult result = vkGetEventStatus(graphicsBase::Base().Device(), handle);
 			if (result < 0)
 				outStream << std::format("[ event ] ERROR\nFailed to get the status of the event!\nError code: {}\n", int32_t(result));
 			return result;
+		}
+		//Non-const Function
+		result_t Create(VkEventCreateInfo& createInfo) {
+			createInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+			VkResult result = vkCreateEvent(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+			if (result)
+				outStream << std::format("[ event ] ERROR\nFailed to create a event!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t Create(VkEventCreateFlags flags = 0) {
+			VkEventCreateInfo createInfo = {
+				.flags = flags
+			};
+			return Create(createInfo);
 		}
 	};
 
@@ -1078,7 +1118,6 @@ namespace vulkan {
 		VkDeviceMemory handle = VK_NULL_HANDLE;
 		VkDeviceSize allocationSize = 0;
 		VkMemoryPropertyFlags memoryProperties = 0;
-        std::shared_ptr<VkDevice> mDevice = nullptr;
 		//--------------------
 		VkDeviceSize AdjustNonCoherentMemoryRange(VkDeviceSize& size, VkDeviceSize& offset) const {
 			const VkDeviceSize& nonCoherentAtomSize = graphicsBase::Base().PhysicalDeviceProperties().limits.nonCoherentAtomSize;
@@ -1096,34 +1135,18 @@ namespace vulkan {
 			auto& operator=(bool value) { this->value = value; return *this; }
 		} areBound;
 	public:
-		deviceMemory(std::shared_ptr<VkDevice> device) : deviceMemory(std::move(device), VkMemoryAllocateInfo{ .allocationSize = 0, .memoryTypeIndex = 0 }) {}
-		deviceMemory(std::shared_ptr<VkDevice> device, VkMemoryAllocateInfo&& allocateInfo) : mDevice(std::move(device)) {
-            if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount) {
-                outStream << std::format("[ deviceMemory ] ERROR\nInvalid memory type index!\n");
-            }
-            allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            if (VkResult result = vkAllocateMemory(graphicsBase::Base().Device(), &allocateInfo, nullptr, &handle)) {
-                outStream << std::format("[ deviceMemory ] ERROR\nFailed to allocate memory!\nError code: {}\n", int32_t(result));
-            }
-            allocationSize = allocateInfo.allocationSize;
-            memoryProperties = graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypes[allocateInfo.memoryTypeIndex].propertyFlags;
+		deviceMemory() = default;
+		deviceMemory(VkMemoryAllocateInfo& allocateInfo) {
+			Allocate(allocateInfo);
 		}
 		deviceMemory(deviceMemory&& other) noexcept {
-            mDevice = std::move(other.mDevice);
 			MoveHandle;
 			allocationSize = other.allocationSize;
 			memoryProperties = other.memoryProperties;
 			other.allocationSize = 0;
 			other.memoryProperties = 0;
 		}
-		~deviceMemory() {
-            if (handle) {
-                vkFreeMemory(graphicsBase::Base().Device(), handle, nullptr);
-                handle = VK_NULL_HANDLE;
-            }
-            allocationSize = 0;
-            memoryProperties = 0;
-        }
+		~deviceMemory() { DestroyHandleBy(vkFreeMemory); allocationSize = 0; memoryProperties = 0; }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1187,6 +1210,21 @@ namespace vulkan {
 			memcpy(pData_dst, pData_src, size_t(size));
 			return UnmapMemory(size, offset);
 		}
+		//Non-const Function
+		result_t Allocate(VkMemoryAllocateInfo& allocateInfo) {
+			if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount) {
+				outStream << std::format("[ deviceMemory ] ERROR\nInvalid memory type index!\n");
+				return VK_RESULT_MAX_ENUM;
+			}
+			allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			if (VkResult result = vkAllocateMemory(graphicsBase::Base().Device(), &allocateInfo, nullptr, &handle)) {
+				outStream << std::format("[ deviceMemory ] ERROR\nFailed to allocate memory!\nError code: {}\n", int32_t(result));
+				return result;
+			}
+			allocationSize = allocateInfo.allocationSize;
+			memoryProperties = graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypes[allocateInfo.memoryTypeIndex].propertyFlags;
+			return VK_SUCCESS;
+		}
 	};
 	class buffer {
 		VkBuffer handle = VK_NULL_HANDLE;
@@ -1196,7 +1234,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		buffer(buffer&& other) noexcept { MoveHandle; }
-		~buffer() { if (handle) { vkDestroyBuffer(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~buffer() { DestroyHandleBy(vkDestroyBuffer); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1291,7 +1329,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		image(image&& other) noexcept { MoveHandle; }
-		~image() { if (handle) { vkDestroyImage(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; }}
+		~image() { DestroyHandleBy(vkDestroyImage); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1389,7 +1427,7 @@ namespace vulkan {
 			Create(buffer, format, offset, range);
 		}
 		bufferView(bufferView&& other) noexcept { MoveHandle; }
-		~bufferView() { if (handle) { vkDestroyBufferView(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~bufferView() { DestroyHandleBy(vkDestroyBufferView); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1430,7 +1468,7 @@ namespace vulkan {
 				std::cout << "111\n";
 			}
 			if(handle != VK_NULL_HANDLE)
-                if (handle) { vkDestroyImageView(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; }
+            DestroyHandleBy(vkDestroyImageView);
             // std::cout << "2222\n";
         }
 		//Getter
@@ -1465,7 +1503,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		sampler(sampler&& other) noexcept { MoveHandle; }
-		~sampler() { if (handle) { vkDestroySampler(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~sampler() { DestroyHandleBy(vkDestroySampler); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1493,8 +1531,8 @@ namespace vulkan {
 			Create(codeSize, pCode);
 		}
 		shaderModule(shaderModule&& other) noexcept { MoveHandle; }
-		~shaderModule() { if (handle) { vkDestroyShaderModule(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; }}
-        void cleanup() { if (handle) { vkDestroyShaderModule(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~shaderModule() { DestroyHandleBy(vkDestroyShaderModule); }
+        void cleanup() { DestroyHandleBy(vkDestroyShaderModule); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1547,8 +1585,8 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		descriptorSetLayout(descriptorSetLayout&& other) noexcept { MoveHandle; }
-		~descriptorSetLayout() { if (handle) { vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
-        void cleanup() { if (handle) { vkDestroyDescriptorSetLayout(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~descriptorSetLayout() { DestroyHandleBy(vkDestroyDescriptorSetLayout); }
+        void cleanup() { DestroyHandleBy(vkDestroyDescriptorSetLayout); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1569,8 +1607,8 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		pipelineLayout(pipelineLayout&& other) noexcept { MoveHandle; }
-		~pipelineLayout() { if (handle) { vkDestroyPipelineLayout(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
-        void cleanup() { if (handle) { vkDestroyPipelineLayout(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~pipelineLayout() { DestroyHandleBy(vkDestroyPipelineLayout); }
+        void cleanup() { DestroyHandleBy(vkDestroyPipelineLayout); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1594,7 +1632,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		pipeline(pipeline&& other) noexcept { MoveHandle; }
-		~pipeline() { if (handle) { vkDestroyPipeline(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~pipeline() { DestroyHandleBy(vkDestroyPipeline); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1623,7 +1661,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		renderPass(renderPass&& other) noexcept { MoveHandle; }
-		~renderPass() { if (handle) { vkDestroyRenderPass(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~renderPass() { DestroyHandleBy(vkDestroyRenderPass); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1667,7 +1705,7 @@ namespace vulkan {
 			Create(createInfo);
 		}
 		framebuffer(framebuffer&& other) noexcept { MoveHandle; }
-		~framebuffer() { if (handle) { vkDestroyFramebuffer(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~framebuffer() { DestroyHandleBy(vkDestroyFramebuffer); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1681,6 +1719,102 @@ namespace vulkan {
 		}
 	};
 
+	class commandBuffer {
+		friend class commandPool;
+		VkCommandBuffer handle = VK_NULL_HANDLE;
+	public:
+		commandBuffer() = default;
+		commandBuffer(commandBuffer&& other) noexcept { MoveHandle; }
+		//Getter
+		DefineHandleTypeOperator;
+		DefineAddressFunction;
+		//Const Function
+		result_t Begin(VkCommandBufferUsageFlags usageFlags, VkCommandBufferInheritanceInfo& inheritanceInfo) const {
+			inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+			VkCommandBufferBeginInfo beginInfo = {
+				.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+				.flags = usageFlags,
+				.pInheritanceInfo = &inheritanceInfo
+			};
+			VkResult result = vkBeginCommandBuffer(handle, &beginInfo);
+			if (result)
+				outStream << std::format("[ commandBuffer ] ERROR\nFailed to begin a command buffer!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t Begin(VkCommandBufferUsageFlags usageFlags = 0) const {
+			VkCommandBufferBeginInfo beginInfo = {
+				.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+				.flags = usageFlags,
+			};
+			VkResult result = vkBeginCommandBuffer(handle, &beginInfo);
+			if (result)
+				outStream << std::format("[ commandBuffer ] ERROR\nFailed to begin a command buffer!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t End() const {
+			VkResult result = vkEndCommandBuffer(handle);
+			if (result)
+				outStream << std::format("[ commandBuffer ] ERROR\nFailed to end a command buffer!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+
+	};
+	class commandPool {
+		VkCommandPool handle = VK_NULL_HANDLE;
+	public:
+		commandPool() = default;
+		commandPool(VkCommandPoolCreateInfo& createInfo) {
+			Create(createInfo);
+		}
+		commandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0) {
+			Create(queueFamilyIndex, flags);
+		}
+		commandPool(commandPool&& other) noexcept { MoveHandle; }
+		~commandPool() { DestroyHandleBy(vkDestroyCommandPool); }
+		//Getter
+		DefineHandleTypeOperator;
+		DefineAddressFunction;
+		//Const Function
+		result_t AllocateBuffers(arrayRef<VkCommandBuffer> buffers, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const {
+			VkCommandBufferAllocateInfo allocateInfo = {
+				.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+				.commandPool = handle,
+				.level = level,
+				.commandBufferCount = uint32_t(buffers.Count())
+			};
+			VkResult result = vkAllocateCommandBuffers(graphicsBase::Base().Device(), &allocateInfo, buffers.Pointer());
+			if (result)
+				outStream << std::format("[ commandPool ] ERROR\nFailed to allocate command buffers!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t AllocateBuffers(arrayRef<commandBuffer> buffers, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const {
+			return AllocateBuffers(
+				{ &buffers[0].handle, buffers.Count() },
+				level);
+		}
+		void FreeBuffers(arrayRef<VkCommandBuffer> buffers) const {
+			vkFreeCommandBuffers(graphicsBase::Base().Device(), handle, buffers.Count(), buffers.Pointer());
+			memset(buffers.Pointer(), 0, buffers.Count() * sizeof(VkCommandBuffer));
+		}
+		void FreeBuffers(arrayRef<commandBuffer> buffers) const {
+			FreeBuffers({ &buffers[0].handle, buffers.Count() });
+		}
+		//Non-const Function
+		result_t Create(VkCommandPoolCreateInfo& createInfo) {
+			createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			VkResult result = vkCreateCommandPool(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+			if (result)
+				outStream << std::format("[ commandPool ] ERROR\nFailed to create a command pool!\nError code: {}\n", int32_t(result));
+			return result;
+		}
+		result_t Create(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0) {
+			VkCommandPoolCreateInfo createInfo = {
+				.flags = flags,
+				.queueFamilyIndex = queueFamilyIndex
+			};
+			return Create(createInfo);
+		}
+	};
 	class descriptorSet {
 		friend class descriptorPool;
 		VkDescriptorSet handle = VK_NULL_HANDLE;
@@ -1748,7 +1882,7 @@ namespace vulkan {
 			Create(maxSetCount, poolSizes, flags);
 		}
 		descriptorPool(descriptorPool&& other) noexcept { MoveHandle; }
-		~descriptorPool() { if (handle) { vkDestroyDescriptorPool(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~descriptorPool() { DestroyHandleBy(vkDestroyDescriptorPool); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
@@ -1825,7 +1959,7 @@ namespace vulkan {
 			Create(queryType, queryCount, pipelineStatistics);
 		}
 		queryPool(queryPool&& other) noexcept { MoveHandle; }
-		~queryPool() { if (handle) { vkDestroyQueryPool(graphicsBase::Base().Device(), handle, nullptr); handle = VK_NULL_HANDLE; } }
+		~queryPool() { DestroyHandleBy(vkDestroyQueryPool); }
 		//Getter
 		DefineHandleTypeOperator;
 		DefineAddressFunction;
