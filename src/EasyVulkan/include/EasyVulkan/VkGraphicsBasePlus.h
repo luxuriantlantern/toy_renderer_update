@@ -7,25 +7,43 @@
 
 #include "VKBase.h"
 #include "VKFormat.h"
-#include "VkCommandPool.h"
-#include "VkCommandBuffer.h"
 namespace vulkan
 {
-    class graphicsBasePlus : public graphicsBase {
-    public:
+    class graphicsBasePlus {
+        friend class graphicsBase;
         VkFormatProperties formatProperties[std::size(formatInfos_v1_0)] = {};
-        commandPool* commandPool_graphics = nullptr;
-        commandPool* commandPool_presentation = nullptr;
-        commandPool* commandPool_compute = nullptr;
-        commandBuffer* commandBuffer_transfer = nullptr;
-        commandBuffer* commandBuffer_presentation = nullptr;
+        commandPool commandPool_graphics;
+        commandPool commandPool_presentation;
+        commandPool commandPool_compute;
+        commandBuffer commandBuffer_transfer;
+        commandBuffer commandBuffer_presentation;
         //Static
 //		static graphicsBasePlus singleton;
     public://--------------------
-
-
-
-        graphicsBasePlus() = default;
+        graphicsBasePlus() {
+//			auto Initialize = [] {
+//				if (graphicsBase::Base().QueueFamilyIndex_Graphics() != VK_QUEUE_FAMILY_IGNORED)
+//					singleton.commandPool_graphics.Create(graphicsBase::Base().QueueFamilyIndex_Graphics(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+//					singleton.commandPool_graphics.AllocateBuffers(singleton.commandBuffer_transfer);
+//				if (graphicsBase::Base().QueueFamilyIndex_Compute() != VK_QUEUE_FAMILY_IGNORED)
+//					singleton.commandPool_compute.Create(graphicsBase::Base().QueueFamilyIndex_Compute(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+//				if (graphicsBase::Base().QueueFamilyIndex_Presentation() != VK_QUEUE_FAMILY_IGNORED &&
+//					graphicsBase::Base().QueueFamilyIndex_Presentation() != graphicsBase::Base().QueueFamilyIndex_Graphics() &&
+//					graphicsBase::Base().SwapchainCreateInfo().imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)
+//					singleton.commandPool_presentation.Create(graphicsBase::Base().QueueFamilyIndex_Presentation(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+//					singleton.commandPool_presentation.AllocateBuffers(singleton.commandBuffer_presentation);
+//				for (size_t i = 0; i < std::size(singleton.formatProperties); i++)
+//					vkGetPhysicalDeviceFormatProperties(graphicsBase::Base().PhysicalDevice(), VkFormat(i), &singleton.formatProperties[i]);
+//			};
+//			auto CleanUp = [] {
+//				singleton.commandPool_graphics.~commandPool();
+//				singleton.commandPool_presentation.~commandPool();
+//				singleton.commandPool_compute.~commandPool();
+//			};
+//			graphicsBase::Plus(singleton);
+//			graphicsBase::Base().AddCallback_CreateDevice(Initialize);
+//			graphicsBase::Base().AddCallback_DestroyDevice(CleanUp);
+        }
 
 //
         graphicsBasePlus(graphicsBasePlus &&) = delete;
@@ -51,13 +69,13 @@ namespace vulkan
         const commandBuffer &CommandBuffer_Transfer() const { return commandBuffer_transfer; }
 
         //Const Function
-        result_t ExecuteCommandBuffer_Graphics(graphicsBase *gb, VkCommandBuffer commandBuffer) const {
+        result_t ExecuteCommandBuffer_Graphics(VkCommandBuffer commandBuffer) const {
             fence fence;
             VkSubmitInfo submitInfo = {
                     .commandBufferCount = 1,
                     .pCommandBuffers = &commandBuffer
             };
-            VkResult result = gb->SubmitCommandBuffer_Graphics(submitInfo, fence);
+            VkResult result = graphicsBase::Base().SubmitCommandBuffer_Graphics(submitInfo, fence);
             if (!result)
                 fence.Wait();
             return result;

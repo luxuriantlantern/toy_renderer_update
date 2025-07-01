@@ -16,7 +16,7 @@ namespace vulkan {
         VkCommandBuffer handle = VK_NULL_HANDLE;
     public:
         commandBuffer() = default;
-        explicit commandBuffer(commandBuffer&& other) noexcept { handle = other.handle; other.handle = VK_NULL_HANDLE; }
+        commandBuffer(commandBuffer&& other) noexcept { handle = other.handle; other.handle = VK_NULL_HANDLE; }
         //Getter
         operator decltype(handle)() const { return handle; }
         const decltype(handle)* Address() const { return &handle; }
