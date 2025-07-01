@@ -37,9 +37,6 @@ public:
     std::unordered_map<SHADER_TYPE, std::shared_ptr<Shader>> getShaders() {
         return mShaders;
     }
-    virtual std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() = 0;
-    virtual void resetRPWF() = 0;
-
 
 protected:
     std::unordered_map<SHADER_TYPE, std::shared_ptr<Shader>> mShaders;

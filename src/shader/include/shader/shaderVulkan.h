@@ -36,11 +36,13 @@ public:
     void LoadShaders(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
     void use() override  {return;}
     void init() override;
-    void addrpfw(std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf1) override
-    {
-        this->rpwf = rpwf1;
-    }
 
+    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> RenderPassAndFramebuffers() override {
+        if (!rpwf) {
+            rpwf = std::ref(easyVulkan::CreateRpwf_ScreenWithDS());
+        }
+        return rpwf;
+    }
 
     struct vertex {
         glm::vec3 position;
@@ -98,6 +100,7 @@ private:
     std::optional<descriptorPool> mdescriptorPool;
 
     descriptorSet mdescriptorSet_triangle;
+    std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>> rpwf;
 
     VkClearValue mclearValue[2] = {
             { .color = { 0.f, 0.f, 0.f, 1.f } },
@@ -106,8 +109,6 @@ private:
     void initForUniform();
     std::optional<texture2d> dummyTexture;
     std::optional<sampler> msampler;
-
-    std::optional<std::optional<std::reference_wrapper<easyVulkan::renderPassWithFramebuffers>>> rpwf;
 
     fence mfence;
     semaphore msemaphore_imageIsAvailable;

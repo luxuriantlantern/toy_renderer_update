@@ -92,7 +92,7 @@ void Viewer::initBackendVulkanImGUI()
     init_info.Queue = graphicsBase::Base().getGraphicsQueue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = mImGuiDescriptorPool;
-    init_info.RenderPass = mCurrentRender->RenderPassAndFramebuffers().value().get().pass;
+    init_info.RenderPass = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers().value().get().pass;
     init_info.Subpass = 0;
     init_info.MinImageCount = graphicsBase::Base().SwapchainCreateInfo().minImageCount;
     init_info.ImageCount = graphicsBase::Base().SwapchainImageCount();
@@ -183,7 +183,7 @@ void Viewer::mainloop()
         }
         else {
             auto &CommandBuffer = mCurrentRender->getCurrentShader()->getCommandBuffer().value();
-            auto rpwf = mCurrentRender->RenderPassAndFramebuffers();
+            auto rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
             ImGui_ImplVulkan_RenderDrawData(draw_data, CommandBuffer);
             rpwf.value().get().pass.CmdEnd(CommandBuffer);
             CommandBuffer.End();
@@ -252,7 +252,6 @@ void Viewer::switchBackend()
             return;
         }
     } else {
-        graphicsBase::Plus().cleanup();
         if (!InitializeWindow({static_cast<uint32_t>(mwidth), static_cast<uint32_t>(mheight)})) {
             std::cerr << "无法创建 Vulkan 窗口，后端切换失败" << std::endl;
             return;
@@ -288,12 +287,12 @@ void Viewer::cleanupVulkan() {
             auto shader = shaders.second;
             shader->cleanup();
         }
-        auto rpwf = mCurrentRender->RenderPassAndFramebuffers();
+        auto rpwf = mCurrentRender->getCurrentShader()->RenderPassAndFramebuffers();
         rpwf.value().get().pass.~renderPass();
         for(auto& framebuffer : rpwf.value().get().framebuffers) {
             framebuffer.~framebuffer();
         }
-        mCurrentRender->resetRPWF();
+        rpwf.reset();
         mCurrentRender->cleanup();
         graphicsBase::Base().cleanup();
     }

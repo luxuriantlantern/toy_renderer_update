@@ -30,11 +30,9 @@ void Render_Vulkan::init() {
 
     for(auto & shader : mShaders)
     {
-        shader.second->addrpfw(RenderPassAndFramebuffers());
         shader.second->init();
     }
     mCurrentShader = { SHADER_TYPE::MATERIAL, mShaders[SHADER_TYPE::MATERIAL] };
-
 }
 
 void Render_Vulkan::cleanup() {
@@ -70,7 +68,6 @@ void Render_Vulkan::cleanup() {
         resources.vertexBuffers_Material.clear();
     }
     mModelResources.clear();
-
 }
 
 Render_Vulkan::~Render_Vulkan() {
@@ -187,7 +184,8 @@ void Render_Vulkan::render(const std::shared_ptr<Scene>& scene, const glm::mat4&
 
     VkClearValue clearValues[2];
     std::memcpy(clearValues, shader->getClearValue(), sizeof(clearValues));
-    rpwf.value().get().pass.CmdBegin(CommandBuffer, rpwf.value().get().framebuffers[i], {{}, windowSize}, clearValues);
+    auto rpwf = shader->RenderPassAndFramebuffers().value();
+    rpwf.get().pass.CmdBegin(CommandBuffer, rpwf.get().framebuffers[i], {{}, windowSize}, clearValues);
 
     for (const auto& model : models) {
         shaderVulkan::uniformBufferObject ubo{};

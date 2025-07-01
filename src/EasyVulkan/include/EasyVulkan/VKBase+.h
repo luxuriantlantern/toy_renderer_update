@@ -40,7 +40,6 @@ namespace vulkan {
 		graphicsBasePlus(graphicsBasePlus&&) = delete;
 		~graphicsBasePlus() = default;
 	public:
-        void cleanup() {singleton.~graphicsBasePlus(); new(&singleton) graphicsBasePlus(); }
 		//Getter
 		const VkFormatProperties& FormatProperties(VkFormat format) const {
 #ifndef NDEBUG
